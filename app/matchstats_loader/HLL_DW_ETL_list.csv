@@ -1,0 +1,5 @@
+### Valid entries: 
+# CMID StatsUrl MatchName MatchDesc ClansCoAllies ClansCoAxis GameServerName GameServerIP GameServerOwner ResultAllies ResultAxis MatchType CompetitionID
+# MatchType: 0 = Casual; 1 = Friendly/Amistoso; 2 = Competitive/Competitivo
+# 1 350 NONE https://server.comunidadhll.es:5443/#/gamescoreboard/1526327
+1|||https://server.comunidadhll.es:5443/#/gamescoreboard/1526327|||||||||||||||Comunidad Hispana HLL Server 2||||||Comunidad Hispana HLL|||0|||0|||0|||0
