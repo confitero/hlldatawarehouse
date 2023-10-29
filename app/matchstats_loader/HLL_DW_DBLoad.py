@@ -124,6 +124,17 @@ def sqlCheckOrInsertPlayer(dbcursor,playerStats):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertPlayer 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(playerStats))
         return -1
 
+def sqlFillPlayerClanAndTAG (dbcursor,MatchDbID):
+    
+    strsql=f"UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where locate(y.clantag,x.Player)>0 AND x.MatchID={MatchDbID};"
+    try:
+        dbcursor.execute(strsql)
+        return 0
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillPlayerClanAndTAG 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match (( " + str(MatchDbID))
+        return -1
+
+
 def sqlInsertPlayerStats(dbcursor,playerStats):
     """Insert player match stats into database
 
@@ -367,7 +378,7 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
                 dbLoadNemesisList (MatchDbID,playerStats["Player"],playerStats["Nemesis"],dbcursor)
                 dbLoadVictimList (MatchDbID,playerStats["Player"],playerStats["Victims"],dbcursor)
                 dbLoadWeaponKillsList (MatchDbID,playerStats["Player"],playerStats["KillsByWeapons"],dbcursor)
-                dbLoadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)
+                dbLoadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)        
         return iOK
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadPlayerStats 1",str(ex.args),str(type(ex)),"Error extracting PlayerStats JSON Match ID = " + str(MatchDbID) + " >> Player Stats >> (" + strjsonStats + ")")
@@ -436,6 +447,7 @@ def dwDbLoadMatchJSON(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbser
         MatchDbID=dbLoadNewMatch(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbcursor)
         if MatchDbID>0:
             iOK+=dbLoadPlayerStats(matchInfofromCSV,MatchDbID,statsPageBody,dbcursor)
+            iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
         else:
             iOK+=MatchDbID
             return iOK-1

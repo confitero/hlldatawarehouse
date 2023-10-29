@@ -32,4 +32,4 @@ playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<>b.Player AN
 
 
 SELECT * FROM playernicks
-SELECT * FROM playernicks where SteamID='76561198112442109'
+SELECT * FROM playerstats LIMIT 10

@@ -23,7 +23,7 @@
 #### MATCH LOAD
 
 #New Match variables
-SET @newMatchID=350;
+SET @newMatchID=XX;
 SET @first_match=1,@second_match=1; -- For two phase matches (home and away). Equal values for only phase match
 SET @CMID=1; -- Community or clan database
 SET @RCONMatchID=1526327;
@@ -154,18 +154,6 @@ INSERT INTO matchstreamers (MatchID,SteamID,Side,CastURL) VALUES (@newMatchID,76
 INSERT INTO matchstreamers (MatchID,SteamID,Side,CastURL) VALUES (@newMatchID,76561197960739379, XXXXXXXSideXXXXXXX, XXXXXXXCastURLXXXXXXXX);
 
 	
-## 8.3) Rellenar la tabla de nicks y jugadores con los nuevos jugadores detectados en la partida que no existían antes en esta BD
---
-#Para cada playerstats de la partida @newMatchID:
-	#Si el steamID = 0 terminar SIN hacer nada >> se considera que ese jugador es temporal hasta que se haga una actuación manual buscando y discriminando
-	#Buscar el nick en la tabla playernicks a partir del nick y el SteamID de la estadística
-		#Si existe, tomar el SteamID de playernicks
-		#Buscar el HLLPlayerID por el SteamID en la tabla Player
-			#Si NO existe el HLLPlayerID, crear uno nuevo
-		#Si NO existe el nick en playernicks, introducirlo en playernicks
-	#Rellenar playerstats.HLLPlayerID
-
-
 # 9) Revisar que cuadran kills y deaths de playerstats con las tablas adicionales
 ## La siguiente consulta no debe devolver nada. Si devuelve tuplas, son las que están descuadradas entre playerstats y killsbyplayer en "KILLS"
 SELECT * FROM playerstats a, (SELECT x1.Killer AS Player,SUM(x1.Kills) AS SumKills FROM killsbyplayer x1 WHERE x1.matchID=@newMatchID GROUP BY x1.Killer) AS b WHERE a.matchID=@newMatchID AND a.player=b.player AND a.Kills<>b.SumKills;

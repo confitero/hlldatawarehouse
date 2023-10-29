@@ -235,6 +235,7 @@ INSERT INTO clantag (ClanID,ClanTag) VALUES (101,'[DIE]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (102,'[VRGA]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (103,'[WsW]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (104,'[250H]');
+INSERT INTO clantag (ClanID,ClanTag) VALUES (104,'[250R]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (104,'[25◯H]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (105,'[129]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (106,'EG |');
