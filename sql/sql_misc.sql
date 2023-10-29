@@ -25,8 +25,11 @@ WHERE a.MatchID=5 AND a.SteamID NOT IN (SELECT b.SteamID from playerstats b WHER
 
 #SELECT mapID FROM map WHERE MapKey='stmereeglise_warfare_night'
 
-SELECT * FROM playerstats WHERE DWPlayerID='76561198814425011' AND matchID=10;
-SELECT * FROM weaponkillsbyplayer WHERE Player='-L- [129]Nemudo Borr' AND matchID=10;
-SELECT * FROM weapondeathsbyplayer WHERE Player='-L- [129]Nemudo Borr' AND matchID=10;
-SELECT * FROM killsbyplayer WHERE killer='-L- [129]Nemudo Borr' AND matchID=10;
-SELECT * FROM deathsbyplayer WHERE killer='-L- [129]Nemudo Borr' AND matchID=10;
+
+--Ver mismo jugador con SteamID y distinto nick en partidas cargadas
+SELECT distinct a.Player,b.Player from
+playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<>b.Player AND a.MatchID<b.matchID
+
+
+SELECT * FROM playernicks
+SELECT * FROM playernicks where SteamID='76561198112442109'

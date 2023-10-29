@@ -6,19 +6,19 @@ XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 #Delete match by ID
 
-SET @MatchIDList='9,9';
-DELETE FROM deathsbyplayer WHERE find_in_set(matchID,@MatchID);
-DELETE FROM killsbyplayer WHERE find_in_set(matchID,@MatchID);
-DELETE FROM weaponkillsbyplayer WHERE find_in_set(matchID,@MatchID);
-DELETE FROM weapondeathsbyplayer WHERE find_in_set(matchID,@MatchID);
-DELETE FROM matchsquads WHERE find_in_set(matchID,@MatchID);
-DELETE FROM matchstreamers WHERE find_in_set(matchID,@MatchID);
-DELETE FROM playerstats WHERE find_in_set(matchID,@MatchID);
+SET @MatchIDList='42,43,44';
+DELETE FROM deathsbyplayer WHERE find_in_set(matchID,@MatchIDList);
+DELETE FROM killsbyplayer WHERE find_in_set(matchID,@MatchIDList);
+DELETE FROM weaponkillsbyplayer WHERE find_in_set(matchID,@MatchIDList);
+DELETE FROM weapondeathsbyplayer WHERE find_in_set(matchID,@MatchIDList);
+DELETE FROM matchsquads WHERE find_in_set(matchID,@MatchIDList);
+DELETE FROM matchstreamers WHERE find_in_set(matchID,@MatchIDList);
+DELETE FROM playerstats WHERE find_in_set(matchID,@MatchIDList);
 SET foreign_key_checks = 0;
 delete from player where DWPlayerID not in (select distinct DWPlayerID from playerstats);
 delete from playernicks where SteamID not in (select distinct SteamID from playerstats);
 SET foreign_key_checks = 1;
-delete from gamematch where find_in_set(matchID,@MatchID);
+delete from gamematch where find_in_set(matchID,@MatchIDList);
 
 XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 

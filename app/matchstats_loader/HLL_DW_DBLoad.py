@@ -92,20 +92,49 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
         return -1
    
 
-def sqlInsertPlayerStats(dbcursor,playerStats):
+def sqlCheckOrInsertPlayer(dbcursor,playerStats):
+    """Check if SteamID exists in database (table Player) and insert new DW database player if doesn't exist.
+    Insert new player nicks into database
 
-    # Check if SteamID exists in database (table Player) and insert new DW database player if doesn't exist
+    Args:
+        dbcursor (cursor): opened cursor to database
+        playerStats (str): JSON with player stats to be inserted in database
+
+    Returns:
+        int: 0 if exists or inserted new; -1 if error
+    """
+    
     strsql="SELECT 1 from Player where DWPlayerID='%s'" % playerStats["DWPlayerID"]
     try:
         ret=dbcursor.execute(strsql)
         if ret==0:
             strsql="insert into Player (DWPlayerID,SteamID,Rank) values ('%s','%s',%s)" % (playerStats["DWPlayerID"],playerStats["SteamID"],"0")
             dbcursor.execute(strsql)
+
+            strsql="insert into PlayerNicks (SteamID,PlayerNick,MainNick) values ('%s','%s',1)" % (playerStats["SteamID"],pymysql.converters.escape_string(playerStats["Player"]))
+            dbcursor.execute(strsql)
+        else:
+            strsql=f"SELECT 1 from PlayerNicks WHERE SteamID='{playerStats['SteamID']}' AND PlayerNick='{pymysql.converters.escape_string(playerStats['Player'])}'"
+            ret=dbcursor.execute(strsql)
+            if ret==0:
+                strsql="insert into PlayerNicks (SteamID,PlayerNick,MainNick) values ('%s','%s',0)" % (playerStats["SteamID"],pymysql.converters.escape_string(playerStats["Player"]))
+                dbcursor.execute(strsql)
+        return 0
     except Exception as ex:
-        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertPlayerStats 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(playerStats))
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertPlayer 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(playerStats))
         return -1
 
-    # Insert player match stats into database
+def sqlInsertPlayerStats(dbcursor,playerStats):
+    """Insert player match stats into database
+
+    Args:
+        dbcursor (cursor): opened cursor to database
+        playerStats (str): JSON with player stats to be inserted in database
+
+    Returns:
+        int: 0 if playerstats inserted; -1 if error
+    """
+    
     strsql="INSERT INTO PlayerStats (CMID,MatchID,Player,\
         DWPlayerID,RCONPlayerID,SteamID,\
         Kills,Deaths,TKs,\
@@ -332,6 +361,7 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
                 playerStats["OffensePoints"]="0"
                 playerStats["DefensePoints"]="0"
                 playerStats["SupportPoints"]="0"
+            iOK+=sqlCheckOrInsertPlayer(dbcursor,playerStats)
             iOK+=sqlInsertPlayerStats(dbcursor,playerStats)
             if iOK==0:
                 dbLoadNemesisList (MatchDbID,playerStats["Player"],playerStats["Nemesis"],dbcursor)
