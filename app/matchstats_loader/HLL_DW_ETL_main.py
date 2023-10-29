@@ -25,38 +25,23 @@ logging.basicConfig(filename=CstrLogfilename, encoding='utf-8', level=logging.ER
 
 # Get app config from ini file CstrConfigfilename module HLL_DW_GetConfig.py
 hlldwconfig = HLL_DW_GetConfig.getConfigArray (CstrLogfilename, CstrConfigfilename)
-try:
-    jsonDestFilePath = hlldwconfig["jsonDestFilePath"] # Destination diretory for downloaded match stats json files
-    jsonRCONStatsUrlprefix = hlldwconfig["jsonRCONStatsUrl"] # Url path to CRCON JSON stats (except matchID)
-    matchesETLFile = hlldwconfig["matchesETLFile"] # File name including new matches to ETL to datawarehouse
-    dbserver = hlldwconfig["dbserver"]
-    dbuser = hlldwconfig["dbuser"]
-    dbpass = hlldwconfig["dbpass"]
-    dbname = hlldwconfig["dbname"]
-    dbcharset = hlldwconfig["dbcharset"]
-except Exception as ex:
-    HLL_DW_error.log_error("Main.py GetConfig SECTION 1",str(ex.args),str(type(ex)),"Error loading HLL stats downloader configuration variables from file >> " + CstrConfigfilename)
+if hlldwconfig==-1:
     exit()
 
 #_______________________________________________________________________________________________________
-# GetMatchesToDownload >>> SECTION - BEGIN
+# LoadMatchesfromCSVBulkFile >>> SECTION - BEGIN
 
 # Get matches list to ETL and run ETL processes
-# TO-DO here: write code to get matches ID and HLL CRCON stats URL from a new basic text file (multiline: MatchID URLstats) variable matchesETLfilePath
 #.....................................................................
 
 # Process each stats match URL from .CSV load file matchesETLFile
+iResult=0
 try:
-    matchJsonFileName = ""
-    jSonStatsURL = ""
-    statsPageBody = ""
-
-    statslistfile = open(matchesETLFile, 'r')
-    count = 0
-    iResult = 1
+    statslistfile = open(hlldwconfig["matchesETLFile"] , 'r')
+    CSVLine = 0
     iProcessedMatchesOK = 0
     while True:
-        count += 1
+        CSVLine += 1
         strLine = statslistfile.readline()
         if not strLine:
             break
@@ -64,44 +49,59 @@ try:
             if strLine[0:1] != "#":
                 statsline = strLine.strip().split("|||")
                 matchInfofromCSV = {}
-                if len(statsline)==13:
-                    # CSV batch line content for new match to load into database: CMID StatsUrl MatchName MatchDesc ClansCoAllies ClansCoAxis GameServerName GameServerIP GameServerOwner ResultAllies ResultAxis MatchType CompetitionID
-                    matchInfofromCSV["CMID"] = statsline[0]
-                    matchInfofromCSV["StatsUrl"] = statsline[1]
-                    matchInfofromCSV["MatchName"] = statsline[2]
-                    matchInfofromCSV["MatchDesc"] = statsline[3]
-                    matchInfofromCSV["ClansCoAllies"] = statsline[4]
-                    matchInfofromCSV["ClansCoAxis"] = statsline[5]                    
+                matchInfofromCSV["LoadType"] = statsline[0]
+                if matchInfofromCSV["LoadType"]=="M":
+                    # CSV batch line content for range to load into DW database: M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePattern|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
+                    matchInfofromCSV["CMID"] = statsline[1]
+                    matchInfofromCSV["StatServerUrl"] = statsline[2]
+                    matchInfofromCSV["MatchID-Start"] = int(statsline[3])
+                    matchInfofromCSV["MatchID-End"] = int(statsline[4])
+                    matchInfofromCSV["MatchNamePattern"] = statsline[5]
                     matchInfofromCSV["GameServerName"] = statsline[6]
                     matchInfofromCSV["GameServerIP"] = statsline[7]
                     matchInfofromCSV["GameServerOwner"] = statsline[8]
-                    matchInfofromCSV["ResultAllies"] = statsline[9]
-                    matchInfofromCSV["ResultAxis"] = statsline[10]
-                    matchInfofromCSV["MatchType"] = statsline[11]
-                    matchInfofromCSV["CompetitionID"] = statsline[12]
-                    
-                if matchInfofromCSV["StatsUrl"]:
-                    matchStatsInfofromURL = HLL_DW_GetStats.parseURLGetMatchIDandServer(jsonRCONStatsUrlprefix,matchInfofromCSV["StatsUrl"],matchesETLFile,count)
-                    if matchStatsInfofromURL!=-1:
-                        matchIDfromUrl = matchStatsInfofromURL["RCONmatchIDfromUrl"] # This is the RCON stat server match ID embed in stats URL page
-                        matchStatsServer = matchStatsInfofromURL["server"] # Stat server IP or domain
-                        if matchIDfromUrl.isnumeric():
-                            jSonStatsURL = matchStatsInfofromURL["url"]
-                            matchJsonFileName = jsonDestFilePath + matchInfofromCSV["CMID"]  + "-" + matchStatsInfofromURL["RCONmatchIDfromUrl"] + "-" + matchStatsServer.replace(".","_").replace(":","_") + "-" + matchInfofromCSV["MatchName"].strip() + ".json"
-                            statsPageBody=HLL_DW_GetStats.getAndSaveMatchJsonFile (matchStatsInfofromURL["schema"],jSonStatsURL, matchJsonFileName) # GetAndSaveMatchJson: Download the jSON match stats http page and save to a local file
-                            if statsPageBody!="":
-                                iResult=HLL_DW_DBLoad.dwDbLoadMatchJSON (matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbserver,dbuser,dbpass,dbname,dbcharset)
-                                if iResult==0:
-                                    iProcessedMatchesOK += 1
+                    matchInfofromCSV["MatchType"] = statsline[9]
+                    matchInfofromCSV["CompetitionID"] = statsline[10]
+
+                    matchInfofromCSV["ClansCoAllies"] = ""
+                    matchInfofromCSV["ClansCoAxis"] = ""
+                    matchInfofromCSV["ResultAllies"] = "0"
+                    matchInfofromCSV["ResultAxis"] = "0"
+
+                    for iMatchID in range(matchInfofromCSV["MatchID-Start"],matchInfofromCSV["MatchID-End"]+1):
+                        matchInfofromCSV["MatchName"] = matchInfofromCSV["MatchNamePattern"] + str(iMatchID)
+                        matchInfofromCSV["MatchDesc"] = matchInfofromCSV["MatchNamePattern"] + " server match stats for RCON map_id " + str(iMatchID)
+                        matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
+                        if HLL_DW_GetStats.getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine)>=0:
+                            iProcessedMatchesOK+=1
+
+                if matchInfofromCSV["LoadType"]=="S":
+                    # CSV batch line content for new match to load into DW database: S CMID StatsUrl MatchName MatchDesc ClansCoAllies ClansCoAxis GameServerName GameServerIP GameServerOwner ResultAllies ResultAxis MatchType CompetitionID
+                    matchInfofromCSV["CMID"] = statsline[1]
+                    matchInfofromCSV["StatsUrl"] = statsline[2]
+                    matchInfofromCSV["MatchName"] = statsline[3]
+                    matchInfofromCSV["MatchDesc"] = statsline[4]
+                    matchInfofromCSV["ClansCoAllies"] = statsline[5]
+                    matchInfofromCSV["ClansCoAxis"] = statsline[6]
+                    matchInfofromCSV["GameServerName"] = statsline[7]
+                    matchInfofromCSV["GameServerIP"] = statsline[8]
+                    matchInfofromCSV["GameServerOwner"] = statsline[9]
+                    matchInfofromCSV["ResultAllies"] = statsline[10]
+                    matchInfofromCSV["ResultAxis"] = statsline[11]
+                    matchInfofromCSV["MatchType"] = statsline[12]
+                    matchInfofromCSV["CompetitionID"] = statsline[13]
+                    if matchInfofromCSV["StatsUrl"]:
+                         if HLL_DW_GetStats.getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine)>=0:
+                            iProcessedMatchesOK+=1
 
     statslistfile.close()
-    if iResult>0:
+    if iResult<0:
         print ("Errors = " + str(iResult) + ". See file " + CstrLogfilename)
     else:
         print ("Processed matches OK: " + str(iProcessedMatchesOK))
 
 except Exception as ex:
-    HLL_DW_error.log_error("Main.py GetMatchesToDownload SECTION 1",str(ex.args),str(type(ex)),"Error loading HLL matches stats line " + str(count) + " file >> (( " + matchJsonFileName + " )) from URL (( " + jSonStatsURL + "))")
+    HLL_DW_error.log_error("Main.py LoadMatchesfromCSVBulkFile SECTION 2",str(ex.args),str(type(ex)),"Error loading HLL matches stats from CSV line " + str(CSVLine))
 
 
 

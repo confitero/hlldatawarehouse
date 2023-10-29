@@ -2,9 +2,4 @@ app/hll-data-analyzer/
 app/.vscode/
 app/matchstats_loader/__pycache__/
 app/matchstats_loader/tests.py
-json_source_stats/1-1526327-server_comunidadhll_es_5443-.json
-json_source_stats/1-350-server_comunidadhll_es_5443_1526327.json
-json_source_stats/test.json
-json_source_stats/test2.json
-json_source_stats/test3_server1.json
-json_source_stats/test_2022.json
+json_source_stats/*.json

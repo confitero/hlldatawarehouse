@@ -37,7 +37,7 @@ ROLLBACK TO puntoX1
 RELEASE SAVEPOINT puntoX1
 
 #COMPROBAR QUE TODOS COINCIDEN
-SET @MatchID=5;
+SET @MatchID=10;
 SELECT COUNT(Distinct SteamID) FROM player;
 SELECT COUNT(DISTINCT SteamID) FROM playerstats;
 SELECT SUM(Kills),SUM(Deaths),SUM(tks),SUM(Kills)+SUM(tks) FROM playerstats WHERE MatchID=@MatchID;
@@ -45,6 +45,27 @@ SELECT SUM(Kills) FROM weaponkillsbyplayer WHERE MatchID=@MatchID;
 SELECT SUM(Deaths) FROM weapondeathsbyplayer WHERE MatchID=@MatchID;
 SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=@MatchID;
 SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=@MatchID;
+
+SELECT * FROM playerstats WHERE MatchID=@MatchID;
+SELECT * FROM weaponkillsbyplayer WHERE MatchID=@MatchID;
+SELECT * FROM weapondeathsbyplayer WHERE MatchID=@MatchID;
+SELECT * FROM killsbyplayer WHERE MatchID=@MatchID;
+SELECT * FROM deathsbyplayer WHERE MatchID=@MatchID;
+
+#Comprobar qué jugadores se han caído de la partida y sus estadísticas de kills-muertes no coinciden
+SELECT * FROM playerstats a, (SELECT b.MatchID,b.Player,SUM(b.Kills) AS PSumKills from weaponkillsbyplayer b GROUP BY b.Player) x where a.MatchID=x.MatchID AND a.Player=x.Player AND a.Kills<>x.PSumKills
+SELECT * FROM playerstats a, (SELECT b.MatchID,b.Player,SUM(b.Deaths) AS PSumDeaths from weapondeathsbyplayer b GROUP BY b.Player) x where a.MatchID=x.MatchID AND a.Player=x.Player AND a.Deaths<>x.PSumDeaths
+SELECT * FROM playerstats a, (SELECT b.MatchID,b.killer AS Player,SUM(b.Kills) AS PSumKills from killsbyplayer b GROUP BY b.Killer) x where a.MatchID=x.MatchID AND a.Player=x.Player AND a.Kills<>x.PSumKills
+SELECT * FROM playerstats a, (SELECT b.MatchID,b.killer AS Player,SUM(b.Deaths) AS PSumDeaths from deathsbyplayer b GROUP BY b.Killer) x where a.MatchID=x.MatchID AND a.Player=x.Player AND a.Kills<>x.PSumDeaths
+SELECT * FROM playerstats a, (SELECT b.MatchID,b.Victim AS Player,SUM(b.Kills) AS PSumKills from killsbyplayer b GROUP BY b.Victim) x where a.MatchID=x.MatchID AND a.Player=x.Player AND a.Deaths<>x.PSumKills
+SELECT * FROM playerstats a, (SELECT b.MatchID,b.Victim AS Player,SUM(b.Deaths) AS PSumDeaths from deathsbyplayer b GROUP BY b.Victim) x where a.MatchID=x.MatchID AND a.Player=x.Player AND a.Deaths<>x.PSumDeaths
+
+SET @MatchID=10;
+SELECT a.*, b.K,c.K,d.K,e.D
+FROM playerstats a, (SELECT SUM(x1.kills) AS K,x1.Killer AS player,x1.MatchID FROM killsbyplayer x1 GROUP BY x1.Killer,x1.MatchID) b, (SELECT SUM(x2.Deaths) AS K,x2.Killer AS Player,x2.MatchID FROM deathsbyplayer x2 GROUP BY x2.Killer,x2.MatchID) c, (SELECT SUM(x3.Kills) AS K,x3.Player,x3.MatchID FROM weaponkillsbyplayer x3 GROUP BY x3.Player,x3.MatchID) d, (SELECT SUM(x4.Deaths) AS D,x4.Player,x4.MatchID FROM weapondeathsbyplayer x4 GROUP BY x4.Player,x4.MatchID) e
+WHERE a.Player=b.player AND a.Player=c.player AND a.Player=d.Player AND a.Player=e.Player AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.MatchID=d.MatchID AND a.MatchID=e.MatchID
+AND a.MatchID=@MatchID
+AND (a.Kills<>b.K OR a.Kills<>c.K OR a.Kills<>d.K OR a.Deaths<>e.D)
 
 #Jugadores sin SteamID
 SELECT * FROM playerstats a WHERE a.SteamID=0;

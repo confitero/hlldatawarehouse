@@ -188,7 +188,7 @@ def sqlInsertWeaponDeathsList(dbcursor,weaponList):
         return -1
 
 
-def loadNemesisList (MatchDbID,player,jsonNemesisList,dbcursor):
+def dbLoadNemesisList (MatchDbID,player,jsonNemesisList,dbcursor):
 
     iOK=0
     try:
@@ -204,7 +204,7 @@ def loadNemesisList (MatchDbID,player,jsonNemesisList,dbcursor):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadNemesisList 1",str(ex.args),str(type(ex)),"Error extracting Nemesis JSON Match ID = " + str(MatchDbID) + " Player = (( " + player + " )) >> NemesisList >> (" + json.dumps(jsonNemesisList) + ")" )
         return iOK-1
 
-def loadVictimList (MatchDbID,player,jsonVictimList,dbcursor):
+def dbLoadVictimList (MatchDbID,player,jsonVictimList,dbcursor):
 
     iOK=0
     try:
@@ -220,7 +220,7 @@ def loadVictimList (MatchDbID,player,jsonVictimList,dbcursor):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadVictimList 1",str(ex.args),str(type(ex)),"Error extracting Victim JSON Match ID = " + str(MatchDbID) + " Player = (( " + player + " )) >> VictimList >> ( " + json.dumps(jsonVictimList) + " )" )
         return iOK+1
 
-def loadWeaponKillsList (MatchDbID,player,jsonWeaponList,dbcursor):
+def dbLoadWeaponKillsList (MatchDbID,player,jsonWeaponList,dbcursor):
 
     iOK=0
     try:
@@ -236,7 +236,7 @@ def loadWeaponKillsList (MatchDbID,player,jsonWeaponList,dbcursor):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadWeaponKillsList 1",str(ex.args),str(type(ex)),"Error extracting weapon kills JSON Match ID = " + str(MatchDbID) + " Player = (( " + player + " )) >> WeaponList >> (" + json.dumps(jsonWeaponList) + ")")
         return iOK-1
 
-def loadWeaponDeathsList (MatchDbID,player,jsonWeaponList,dbcursor):
+def dbLoadWeaponDeathsList (MatchDbID,player,jsonWeaponList,dbcursor):
 
     iOK=0
     try:
@@ -252,7 +252,7 @@ def loadWeaponDeathsList (MatchDbID,player,jsonWeaponList,dbcursor):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadWeaponDeathsList 1",str(ex.args),str(type(ex)),"Error extracting weapon deaths JSON Match ID = " + str(MatchDbID) + " Player = (( " + player + " )) >> WeaponList >> (" + json.dumps(jsonWeaponList) + ")")
         return iOK-1
 
-def loadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
+def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
 
     #TODO Hay que adaptar a los nuevos parámetros de entrada matchInfofromCSV[]
 
@@ -334,16 +334,16 @@ def loadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
                 playerStats["SupportPoints"]="0"
             iOK+=sqlInsertPlayerStats(dbcursor,playerStats)
             if iOK==0:
-                loadNemesisList (MatchDbID,playerStats["Player"],playerStats["Nemesis"],dbcursor)
-                loadVictimList (MatchDbID,playerStats["Player"],playerStats["Victims"],dbcursor)
-                loadWeaponKillsList (MatchDbID,playerStats["Player"],playerStats["KillsByWeapons"],dbcursor)
-                loadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)
+                dbLoadNemesisList (MatchDbID,playerStats["Player"],playerStats["Nemesis"],dbcursor)
+                dbLoadVictimList (MatchDbID,playerStats["Player"],playerStats["Victims"],dbcursor)
+                dbLoadWeaponKillsList (MatchDbID,playerStats["Player"],playerStats["KillsByWeapons"],dbcursor)
+                dbLoadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)
         return iOK
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadPlayerStats 1",str(ex.args),str(type(ex)),"Error extracting PlayerStats JSON Match ID = " + str(MatchDbID) + " >> Player Stats >> (" + strjsonStats + ")")
         return iOK-1
 
-def loadNewMatch(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,dbcursor):
+def dbLoadNewMatch(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,dbcursor):
 # Get match info from stats JSON page and insert new match into database
 
     iOK=0
@@ -353,41 +353,59 @@ def loadNewMatch(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,dbcursor):
         matchInfofromJSON = {"RCONMatchID": "", "CreationTime": "", "StartTime": "", "EndTime": "", "DurationSec": "0", "RCONServerNumber": "", "RCONMapName": ""}
 
         jsonMatchInfo=jsonStats["result"]
-        matchInfofromJSON["RCONMatchID"]=str(jsonMatchInfo["id"])
-        matchInfofromJSON["CreationTime"]=str(jsonMatchInfo["creation_time"])
-        matchInfofromJSON["StartTime"]=str(jsonMatchInfo["start"])
-        matchInfofromJSON["EndTime"]=str(jsonMatchInfo["end"])
-        matchInfofromJSON["RCONServerNumber"]=str(jsonMatchInfo["server_number"])
-        matchInfofromJSON["RCONMapName"]=str(jsonMatchInfo["map_name"])
+        if jsonStats["result"]:
+            matchInfofromJSON["RCONMatchID"]=str(jsonMatchInfo["id"])
+            matchInfofromJSON["CreationTime"]=str(jsonMatchInfo["creation_time"])
+            matchInfofromJSON["StartTime"]=str(jsonMatchInfo["start"])
+            matchInfofromJSON["EndTime"]=str(jsonMatchInfo["end"])
+            matchInfofromJSON["RCONServerNumber"]=str(jsonMatchInfo["server_number"])
+            matchInfofromJSON["RCONMapName"]=str(jsonMatchInfo["map_name"])
 
-        try:
-            matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S")).seconds            
-        except Exception as ex:
-            HLL_DW_error.log_error("HLL_DW_DBLoad.py loadNewMatch 1",str(ex.args),str(type(ex)),"Error in JSON StartTime/EndTime for match stats content " + str(strMatchJSON[0:2048]))
-            return iOK-1
+            try:
+                matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S")).seconds            
+            except Exception as ex:
+                HLL_DW_error.log_error("HLL_DW_DBLoad.py loadNewMatch 1",str(ex.args),str(type(ex)),"Error in JSON StartTime/EndTime for match stats content " + str(strMatchJSON[0:2048]))
+                return iOK-1
 
-        MatchDbID=sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofromJSON)
-        if MatchDbID>0:
-            return MatchDbID
+            MatchDbID=sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofromJSON)
+            if MatchDbID>0:
+                return MatchDbID
+            else:
+                iOK+=MatchDbID
+                return iOK-1
         else:
-            iOK+=MatchDbID
-            return iOK-1
+            raise Exception("JSON match stats 'result' field invalid: " + strMatchJSON[0:2000])
 
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadNewMatch 2",str(ex.args),str(type(ex)),"Error loading into database for Match = " + str(matchInfofromCSV) + " " + str(matchStatsInfofromURL))
         return iOK-1
 
 def dwDbLoadMatchJSON(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbserver,dbuser,dbpass,dbname,dbcharset):
+    """Loads a new single match and its stats into DW database and commits if succeed
+
+    Args:
+        matchInfofromCSV (dict): Match info from CSV bulk load file HLL_DW_ETL_list.csv
+        matchStatsInfofromURL (dict): Match info from stats URL
+        statsPageBody (string): JSON from match stats page
+        dbserver (string): IP or dns name for rdbms server
+        dbuser (string): database login user
+        dbpass (string): database login password
+        dbname (string): database name / schema
+        dbcharset (string): database charset, i.e. utf8mb4
+
+    Returns:
+        int: 0 if match is loaded successfully; <0 if error (number of errors found)
+    """
+
     iOK=0
     try:
         #Open SQL connection to database and cursor for execute SQL sentences
         dbConn=sqlConnect(dbserver,dbuser,dbpass,dbname,dbcharset)
-        #DBG dbConn=sqlConnect('localhost','root','pwdaa','dw501backup','utf8mb4')
         dbcursor=sqlOpenCursor(dbConn)
 
-        MatchDbID=loadNewMatch(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbcursor)
+        MatchDbID=dbLoadNewMatch(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbcursor)
         if MatchDbID>0:
-            iOK+=loadPlayerStats(matchInfofromCSV,MatchDbID,statsPageBody,dbcursor)
+            iOK+=dbLoadPlayerStats(matchInfofromCSV,MatchDbID,statsPageBody,dbcursor)
         else:
             iOK+=MatchDbID
             return iOK-1

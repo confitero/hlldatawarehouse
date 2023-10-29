@@ -1,5 +1,11 @@
 ### Valid entries: 
-# CMID StatsUrl MatchName MatchDesc ClansCoAllies ClansCoAxis GameServerName GameServerIP GameServerOwner ResultAllies ResultAxis MatchType CompetitionID
+# Valid entry for single match load: LoadType CMID StatsUrl MatchName MatchDesc ClansCoAllies ClansCoAxis GameServerName GameServerIP GameServerOwner ResultAllies ResultAxis MatchType CompetitionID
+# LoadType: S = Single match; M = Multiple matches
 # MatchType: 0 = Casual; 1 = Friendly/Amistoso; 2 = Competitive/Competitivo
-# 1 350 NONE https://server.comunidadhll.es:5443/#/gamescoreboard/1526327
-1|||https://server.comunidadhll.es:5443/#/gamescoreboard/1526327|||||||||||||||Comunidad Hispana HLL Server 2||||||Comunidad Hispana HLL|||0|||0|||0|||0
+#S|||1|||https://server.comunidadhll.es:5443/#/gamescoreboard/1|||||||||||||||Comunidad Hispana HLL Server 2||||||Comunidad Hispana HLL|||0|||0|||0|||0
+
+# Valid entry for server matches bulk load:
+# Info: matchID (RCON map_id) is unique to all the same servers managed by one rcon and all RCON matches stats can be downloaded from any RCON server port
+# M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePattern|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
+#M|||1|||https://server.comunidadhll.es:5443|||1526466|||1526466|||CHHLL-Casual|||Comunidad Hispana HLL Server 2 (port:8772)|||54.36.60.213|||Comunidad Hispana HLL|||0|||0
+M|||1|||https://server.comunidadhll.es:5443|||1526454|||1526473|||CHHLL-Casual|||Comunidad Hispana HLL Server X||||||Comunidad Hispana HLL|||0|||0

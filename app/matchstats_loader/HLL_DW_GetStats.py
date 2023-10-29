@@ -1,12 +1,12 @@
 import requests
 import io
-import logging
 import urllib3
 import urllib.parse
 import json
 import HLL_DW_error
+import HLL_DW_DBLoad
 
-def parseURLGetMatchIDandServer (jsonRCONStatsUrlprefix,strline,strETLmatchesFileName,numLine):
+def parseURLGetMatchIDandServer (jsonRCONStatsUrlprefix,strline,strETLmatchesFileName,CSVLine):
     # Parse match stats URL line and get server matchID
     validSchemas = ("http","https","file")
     RCONmatchIDfromUrl = ""    
@@ -21,7 +21,7 @@ def parseURLGetMatchIDandServer (jsonRCONStatsUrlprefix,strline,strETLmatchesFil
         if (strURLschema=="file"):
             RCONmatchIDfromUrl="0"
         if (strURLschema not in validSchemas) or (len(strURLnetloc)==0) or (len(strURLpath)==0) or not RCONmatchIDfromUrl.isnumeric():
-            raise Exception("Invalid match stats URL in line while urlparsing line: " + str(numLine) + " >>> Line ||| " + strline + " |||")
+            raise Exception("Invalid match stats URL in line while urlparsing line: " + str(CSVLine) + " >>> Line ||| " + strline + " |||")
         else:
             dictUrl["RCONmatchIDfromUrl"]=RCONmatchIDfromUrl
             dictUrl["server"]=strURLnetloc
@@ -32,7 +32,7 @@ def parseURLGetMatchIDandServer (jsonRCONStatsUrlprefix,strline,strETLmatchesFil
                 dictUrl["url"]=strURLnetloc + strURLpath
 
     except Exception as ex:    
-        HLL_DW_error.log_error("Extract_Stats.py parseURLGetMatchIDandServer 1",str(ex.args),str(type(ex)),"Error parsing matches stats URL from file >> " + strETLmatchesFileName + " >> Line " + str(numLine) + " ((" + strline + "))")
+        HLL_DW_error.log_error("Extract_Stats.py parseURLGetMatchIDandServer 1",str(ex.args),str(type(ex)),"Error parsing matches stats URL from file >> " + strETLmatchesFileName + " >> Line " + str(CSVLine) + " ((" + strline + "))")
         return -1
 
     return dictUrl
@@ -65,3 +65,33 @@ def getAndSaveMatchJsonFile (strschema,statsurl,jsonDestFilePath):
     except Exception as ex:
         HLL_DW_error.log_error("Extract_Stats.py getAndSaveMatchJsonFile 1",str(ex.args),str(type(ex)),"Error loading HLL matches stats file >> (( " + jsonDestFilePath + " )) from URL (( " + statsurl + "))")
         return ""
+  
+
+def getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine):
+    """Download stats JSON from match stats URL and load it into DW database
+
+    Args:
+        matchInfofromCSV (dict): match info from CSV file
+        hlldwconfig (dict): ini app config
+        CSVLine (int): match CSV line number, used to report error in logging
+
+    Returns:
+        int: -1 if error; 0 if no match loaded; 1 if the match was loaded successfully
+    """
+
+    try:
+        matchStatsInfofromURL = parseURLGetMatchIDandServer(hlldwconfig["jsonRCONStatsUrlprefix"],matchInfofromCSV["StatsUrl"],hlldwconfig["matchesETLFile"],CSVLine)
+        matchStatsServer = matchStatsInfofromURL["server"] # Stat server IP or domain
+        if matchStatsInfofromURL!=-1:
+            if matchStatsInfofromURL["RCONmatchIDfromUrl"].isnumeric():
+                matchJsonFileName = hlldwconfig["jsonDestFilePath"] + matchInfofromCSV["CMID"]  + "-" + matchStatsInfofromURL["RCONmatchIDfromUrl"] + "-" + matchStatsServer.replace(".","_").replace(":","_") + "-" + matchInfofromCSV["MatchName"].strip() + ".json"
+                statsPageBody=getAndSaveMatchJsonFile (matchStatsInfofromURL["schema"],matchStatsInfofromURL["url"], matchJsonFileName) # GetAndSaveMatchJson: Download the jSON match stats http page and save to a local file
+                if statsPageBody!="":
+                    iResult=HLL_DW_DBLoad.dwDbLoadMatchJSON (matchInfofromCSV,matchStatsInfofromURL,statsPageBody,hlldwconfig["dbserver"],hlldwconfig["dbuser"],hlldwconfig["dbpass"],hlldwconfig["dbname"],hlldwconfig["dbcharset"])
+                    if iResult==0:
+                        return 1 # Returns 1 as 1 match succesfully loaded
+
+        return iResult
+    except Exception as ex:
+        HLL_DW_error.log_error("Extract_Stats.py getAndLoadMatch 2",str(ex.args),str(type(ex)),"Error loading HLL single match >> (( " + matchJsonFileName + " )) from URL (( " + matchInfofromCSV["StatsUrl"] + "))")
+        return -1
