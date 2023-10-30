@@ -37,7 +37,7 @@ ROLLBACK TO puntoX1
 RELEASE SAVEPOINT puntoX1
 
 #COMPROBAR QUE TODOS COINCIDEN (sumatorio de kills y death de la partida deben coincidir, salvo caídas de jugadores o cambios de nick entre caídas)
-SET @MatchID=52;
+SET @MatchID=57;
 SELECT COUNT(Distinct SteamID) FROM player;
 SELECT COUNT(DISTINCT SteamID) FROM playerstats;
 SELECT SUM(Kills),SUM(Deaths),SUM(tks),SUM(Kills)+SUM(tks) FROM playerstats WHERE MatchID=@MatchID;

@@ -26,6 +26,9 @@ def sqlExecute(dbcursor,strsql):
     ret=dbcursor.execute(strsql)
     return ret
 
+def sqlAbort(dbconn):
+    dbconn.rollback()
+
 def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofromJSON):
     """Insert a new match in database and returns the internal database match ID
 
@@ -43,7 +46,7 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
     Returns:
         int: -1 if error; >0 new matchDbID
     """
-    
+
     # Get database mapID from table map throught matchInfofromJSON["RCONMapName"]
     mapID=0
     strsql="SELECT mapID from map where MapKey='%s'" % matchInfofromJSON["RCONMapName"]
@@ -56,7 +59,7 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertMatch 1",str(ex.args),str(type(ex)),"Error searching mapID from MapKey in SQL sentence >> (( " + strsql + " )) for array (( " + str(matchInfofromJSON)+" ))")
         return -1
-    
+
     # Check if CMID+RCONMatchID exists in database (table Gamematch) and insert new DW database match if doesn't exist
     strsql="SELECT 1 from gamematch where CMID=%s AND RCONMatchID=%s" % (matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"])
     try:
@@ -65,7 +68,7 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
             #strsql="INSERT INTO gamematch (CMID, RCONMatchID, MatchName, MatchDesc, ClansCoAllies, ClansCoAxis, StartTime, EndTime, DurationSec, RCONMapName, RCONServerNumber, StatsUrl, JSONStatsURL, GameServerName, GameServerIP, GameServerOwner, MapID, ResultAllies, ResultAxis, MatchType, CompetitionID) VALUES \
             #    (%s,%s,'%s','%s','%s','%s','%s','%s',%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%s,%s,%s%s,%s)" \
             #    % (matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"],matchInfofromCSV["MatchName"],matchInfofromCSV["MatchDesc"],matchInfofromCSV["ClansCoAllies"],matchInfofromCSV["ClansCoAxis"],matchInfofromJSON["StartTime"],matchInfofromJSON["EndTime"],matchInfofromJSON["DurationSec"],matchInfofromJSON["RCONMapName"],matchInfofromJSON["RCONServerNumber"],matchInfofromCSV["StatsUrl"],matchStatsInfofromURL["url"],matchInfofromCSV["GameServerName"],matchInfofromCSV["GameServerIP"],matchInfofromCSV["GameServerOwner"],mapID,matchInfofromCSV["MatchType"],matchInfofromCSV["CompetitionID"])
-               
+
             strsql=f"INSERT INTO gamematch (CMID, RCONMatchID, MatchName, MatchDesc, ClansCoAllies, ClansCoAxis, StartTime, EndTime, DurationSec, RCONMapName, RCONServerNumber, StatsUrl,\
                   JSONStatsURL, GameServerName, GameServerIP, GameServerOwner, MapID, ResultAllies, ResultAxis, MatchType, CompetitionID) VALUES \
                 ({matchInfofromCSV['CMID']},{matchInfofromJSON['RCONMatchID']},'{matchInfofromCSV['MatchName']}',\
@@ -75,7 +78,7 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
                 '{matchStatsInfofromURL['url']}','{matchInfofromCSV['GameServerName']}','{matchInfofromCSV['GameServerIP']}','{matchInfofromCSV['GameServerOwner']}',\
                 {str(mapID)},{matchInfofromCSV['ResultAllies']},{matchInfofromCSV['ResultAxis']},{matchInfofromCSV['MatchType']},{matchInfofromCSV['CompetitionID']});"
             sqlExecute(dbcursor,strsql)
-            
+
             #Get the new created match internal database ID
             strsql="SELECT matchID from gamematch where CMID=%s AND RCONMatchID=%s AND StartTime='%s' AND EndTime='%s'" % (matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"],matchInfofromJSON["StartTime"],matchInfofromJSON["EndTime"])
             ret=sqlExecute(dbcursor,strsql)
@@ -84,13 +87,38 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
                 return matchDbID
             else:
                 raise Exception("matchDbID not found in table gamematch or several results found for " + str(matchInfofromCSV) + " " + str(matchInfofromJSON))
-            
+
         else:
             raise Exception("Error trying to insert new match into database table gamematch: match exists for CMID=" + str(matchInfofromCSV["CMID"]) + " and RCONMatchID=" + matchInfofromJSON["RCONMatchID"])
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertMatch 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(matchInfofromJSON) + " ))")
         return -1
-   
+
+def sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsInfofromURL):
+    """Check match stat weapons not registered in database table weapon and log/raise the error
+
+    Args:
+        dbcursor (cursor): opened cursor to database
+        MatchDbID (int): Match internal database ID for player stats
+
+    Returns:
+        int: 0 if no errors; -1 if any error
+    """
+    strsql=f"SELECT DISTINCT Weapon FROM weaponkillsbyplayer a WHERE a.matchID={MatchDbID} AND a.weapon NOT IN (SELECT DISTINCT weapon FROM weapon);"
+    try:
+        ret=dbcursor.execute(strsql)
+        if ret==0:
+            return 0
+        else:
+            for strweapon in dbcursor.fetchall():
+                logging.error(f"Weapon '{strweapon}' not found in database table weapon")
+            HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckNotRegisteredWeapons 1","","","Error: Match stats contains weapons not registered in database. See log file to get the new weapons that must be loaded into table weapon before load this match CMID = " + matchInfofromCSV["CMID"] + ", map_id = " + matchStatsInfofromURL["RCONmatchIDfromUrl"])
+            return -1
+
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckNotRegisteredWeapons 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
+        return -1
+
 
 def sqlCheckOrInsertPlayer(dbcursor,playerStats):
     """Check if SteamID exists in database (table Player) and insert new DW database player if doesn't exist.
@@ -103,7 +131,7 @@ def sqlCheckOrInsertPlayer(dbcursor,playerStats):
     Returns:
         int: 0 if exists or inserted new; -1 if error
     """
-    
+
     strsql="SELECT 1 from Player where DWPlayerID='%s'" % playerStats["DWPlayerID"]
     try:
         ret=dbcursor.execute(strsql)
@@ -133,7 +161,7 @@ def sqlFillPlayerClanAndTAG (dbcursor,MatchDbID):
 
     Returns:
         int: 0 if no errors; -1 if any error
-    """   
+    """
     strsql=f"UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where locate(y.clantag,x.Player)>0 AND x.MatchID={MatchDbID};"
     try:
         dbcursor.execute(strsql)
@@ -171,7 +199,7 @@ def sqlInsertPlayerStats(dbcursor,playerStats):
     Returns:
         int: 0 if playerstats inserted; -1 if error
     """
-    
+
     strsql="INSERT INTO PlayerStats (CMID,MatchID,Player,\
         DWPlayerID,RCONPlayerID,SteamID,\
         Kills,Deaths,TKs,\
@@ -323,7 +351,7 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
     #TODO Hay que adaptar a los nuevos parámetros de entrada matchInfofromCSV[]
 
     iOK=0
-    try:        
+    try:
         jsonStats = json.loads(strMatchJSON)
 
         playerStats = {"MatchName": "", "CMID": "", "MatchID": "", "Player": "", "DWPlayerID": "", "RCONPlayerID": "", "SteamID": "", "Kills": "", "Deaths": "", "TKs": "", "KD": "", "MaxKillStreak": "", "KillsMin": "", \
@@ -404,7 +432,7 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
                 dbLoadNemesisList (MatchDbID,playerStats["Player"],playerStats["Nemesis"],dbcursor)
                 dbLoadVictimList (MatchDbID,playerStats["Player"],playerStats["Victims"],dbcursor)
                 dbLoadWeaponKillsList (MatchDbID,playerStats["Player"],playerStats["KillsByWeapons"],dbcursor)
-                dbLoadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)        
+                dbLoadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)
         return iOK
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py loadPlayerStats 1",str(ex.args),str(type(ex)),"Error extracting PlayerStats JSON Match ID = " + str(MatchDbID) + " >> Player Stats >> ( " + strjsonStats + " )")
@@ -442,7 +470,7 @@ def dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,d
             matchInfofromJSON["RCONMapName"]=str(jsonMatchInfo["map_name"])
 
             try:
-                matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S")).seconds            
+                matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S")).seconds
             except Exception as ex:
                 HLL_DW_error.log_error("HLL_DW_DBLoad.py dbInsertNewMatchRecord 1",str(ex.args),str(type(ex)),"Error in JSON StartTime/EndTime for match stats content " + str(strMatchJSON[0:2048]))
                 return iOK-1
@@ -483,23 +511,25 @@ def dwDbLoadMatchJSON(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbser
         dbConn=sqlConnect(dbserver,dbuser,dbpass,dbname,dbcharset)
         dbcursor=sqlOpenCursor(dbConn)
 
+        dbConn.begin()
         MatchDbID=dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbcursor)
         if MatchDbID>0:
             iOK+=dbLoadPlayerStats(matchInfofromCSV,MatchDbID,statsPageBody,dbcursor)
-            iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
-            iOK+=sqlFillPlayerMatchSide (dbcursor,MatchDbID)
+            if iOK>=0: iOK+=sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsInfofromURL)
+            if iOK>=0: iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
+            if iOK>=0: iOK+=sqlFillPlayerMatchSide (dbcursor,MatchDbID)
+            if iOK<0: sqlAbort(dbConn)
+            sqlCommit(dbConn)
         else:
+            sqlAbort(dbConn)
             iOK+=MatchDbID
-            return iOK-1
-
-        #Close sql cursor an database connection
         sqlCloseCursor(dbcursor)
-        sqlCommit(dbConn)
         sqlCloseConnection(dbConn)
         return iOK
-    
-    except Exception as ex:          
-        HLL_DW_error.log_error("HLL_DW_DBLoad.py dwDbLoadJSONFile 1",str(ex.args),str(type(ex)),"Error loading into database for Match ID = " + str(matchInfofromCSV) + "-" + str(matchStatsInfofromURL))    
+
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py dwDbLoadJSONFile 1",str(ex.args),str(type(ex)),"Error loading into database for Match ID = " + str(matchInfofromCSV) + "-" + str(matchStatsInfofromURL))
+        sqlAbort(dbConn)
         sqlCloseCursor(dbcursor)
         sqlCloseConnection(dbConn)
         return iOK-1
