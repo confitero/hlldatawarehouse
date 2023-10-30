@@ -32,4 +32,8 @@ playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<>b.Player AN
 
 
 SELECT * FROM playernicks
-SELECT * FROM playerstats LIMIT 10
+SELECT * FROM playerstats where matchID=52 LIMIT 10
+
+SELECT distinct a.MatchID,a.Player,a.PlayerClanID,a.PlayerClanTag,d.Side,a.KillsByWeapons FROM playerstats a, gamematch b, weaponkillsbyplayer c, weapon d WHERE a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;
+
+
