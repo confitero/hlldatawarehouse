@@ -2,8 +2,8 @@ from encodings.utf_8 import encode
 import logging
 import HLL_DW_GetConfig
 import HLL_DW_GetStats
-import HLL_DW_DBLoad
 import HLL_DW_error
+import os,sys
 
 # Logging file name
 CstrLogfilename = "./HLL_DW.log"
@@ -19,6 +19,10 @@ CstrConfigfilename = "./HLL_DW_Config.ini"
 # GetConfig >>> SECTION - BEGIN
 
 #.....................................................................
+
+if len(sys.argv)>1:
+    if sys.argv[2] == "deletelog":
+        os.remove(CstrLogfilename)
 
 # Initialize app logging in file CstrLogfilename
 logging.basicConfig(filename=CstrLogfilename, encoding='utf-8', level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -72,7 +76,8 @@ try:
                         matchInfofromCSV["MatchName"] = matchInfofromCSV["MatchNamePattern"] + str(iMatchID)
                         matchInfofromCSV["MatchDesc"] = matchInfofromCSV["MatchNamePattern"] + " server match stats for RCON map_id " + str(iMatchID)
                         matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
-                        if HLL_DW_GetStats.getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine)>=0:
+                        iOK=HLL_DW_GetStats.getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine)
+                        if iOK>=0:
                             iProcessedMatchesOK+=1
 
                 if matchInfofromCSV["LoadType"]=="S":

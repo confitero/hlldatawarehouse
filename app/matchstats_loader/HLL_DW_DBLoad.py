@@ -171,8 +171,9 @@ def sqlFillPlayerClanAndTAG (dbcursor,MatchDbID):
         return -1
 
 def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
-    """Fill table field playerstats.side based on match kills weapons used by player
-
+    """Fill table field playerstats.side based on match kills weapons used by player. If player doesn't have kills but has deaths, set side based on weapondeathsbyplayer. Incoherences may be generated for players changing side in the same match
+        Players with no kills and deaths will have PlayerSide as Null
+    
     Args:
         dbcursor (cursor): opened cursor to database
         MatchDbID (int): Match internal database ID for player stats
@@ -180,10 +181,17 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
     Returns:
         int: 0 if no errors; -1 if any error
     """
-
-    strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;"
+    
     try:
+        strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;"
         dbcursor.execute(strsql)
+
+        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=2 WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=1;"
+        dbcursor.execute(strsql)
+
+        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=1 WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2;"
+        dbcursor.execute(strsql)
+
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillPlayerMatchSide 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
@@ -281,6 +289,89 @@ def sqlInsertWeaponDeathsList(dbcursor,weaponList):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertWeaponDeathsList 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(weaponList) + " ))")
         return -1
 
+def sqlPreCheckNumPlayers(dbcursor):
+
+    strsql="SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),1,0) AS CheckNumPlayers;"
+    try:
+        dbcursor.execute(strsql)
+        if dbcursor.fetchone()[0]==1:
+            HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlPreCheckNumPlayers 1","","","Error pre-checking gobally count distinct SteamID not equal in playerstats and players")
+        return 0
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlPreCheckNumPlayers 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " ))")
+        return -1
+
+def sqlCheckMatchNumPlayers(dbcursor,MatchDbID):
+
+    strsql=f"SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID={MatchDbID} AND SteamID NOT IN (SELECT DISTINCT SteamID FROM player);"
+    try:
+        if dbcursor.execute(strsql):
+            NumPlayers=dbcursor.fetchone()[0]
+            if NumPlayers>=1:
+                HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 1","","","Error: not all match players exists in table player for matchID = " + str(MatchDbID))
+        return 0
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " ))")
+        return -1
+
+def sqlCheckConsistency(strsql,dbcursor,strerror):
+
+    try:
+        dbcursor.execute(strsql)
+        if dbcursor.fetchone()[0]>0:
+            HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckConsistency 1","","",strerror)
+            return -1
+        return 0
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckConsistency 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " ))")
+        return -1
+
+
+def sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID):
+
+    strsql=f"SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID={MatchDbID})<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in killsbyplayer-deathsbyplayer for match = " + str(MatchDbID))
+    
+    strsql=f"SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID={MatchDbID})<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Kills;"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in killsbyplayer-weaponkillsbyplayer for match = " + str(MatchDbID))
+
+    strsql=f"SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID={MatchDbID})<>(SELECT SUM(kills) FROM killsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in playerstats-killsbyplayer for match = " + str(MatchDbID))
+
+    strsql=f"SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID={MatchDbID})<>(SELECT SUM(deaths) FROM playerstats WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in playerstats matches sum deaths in playerstats for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID={MatchDbID} AND killer NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in killsbyplayer-playerstats for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID={MatchDbID} AND victim NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in killsbyplayer-playerstats for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID={MatchDbID} AND victim NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency victim players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID={MatchDbID} AND killer NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency killer players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weaponkillsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in weaponkillsbyplayer-playerstats for match = " + str(MatchDbID))
+
+    # Disabled to avoid errors when loading old matches that don't have JSON weapondeathsbyplayer field
+    #strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weapondeathsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    #sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in weapondeathsbyplayer-playerstats for match = " + str(MatchDbID))
+    
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM killsbyplayer WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in playerstats-killsbyplayer for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND Deaths>0 AND player NOT IN (SELECT player FROM deathsbyplayer WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in playerstats-deathsbyplayer for match = " + str(MatchDbID))
+
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM weaponkillsbyplayer WHERE matchID={MatchDbID});"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in playerstats-weaponkillsbyplayer for match = " + str(MatchDbID))
+
+    strsql=f"SELECT count(*) FROM playerstats WHERE SteamID=0 AND matchID={MatchDbID};"
+    sqlCheckConsistency(strsql,dbcursor,"Error checking playerstat, found players with steamID=0 for match = " + str(MatchDbID))
+   
 
 def dbLoadNemesisList (MatchDbID,player,jsonNemesisList,dbcursor):
 
@@ -511,21 +602,31 @@ def dwDbLoadMatchJSON(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbser
         dbConn=sqlConnect(dbserver,dbuser,dbpass,dbname,dbcharset)
         dbcursor=sqlOpenCursor(dbConn)
 
+        #Pre-check if players are registered in database. If not, warns in logging but continues to load match
+        sqlPreCheckNumPlayers(dbcursor)
+        
         dbConn.begin()
         MatchDbID=dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbcursor)
         if MatchDbID>0:
             iOK+=dbLoadPlayerStats(matchInfofromCSV,MatchDbID,statsPageBody,dbcursor)
+            #Post-check if all players are registered in database. If not, aborts match load but continues batch load for next match
+            sqlCheckMatchNumPlayers(dbcursor,MatchDbID)
+            #If there are match stats weapons not registered in DW database, aborts match load but continues batch load for next match
             if iOK>=0: iOK+=sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsInfofromURL)
             if iOK>=0: iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
             if iOK>=0: iOK+=sqlFillPlayerMatchSide (dbcursor,MatchDbID)
-            if iOK<0: sqlAbort(dbConn)
-            sqlCommit(dbConn)
+            if iOK<0:
+                sqlAbort(dbConn)
+            else:
+                sqlCommit(dbConn)
+                sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID)
         else:
             sqlAbort(dbConn)
             iOK+=MatchDbID
         sqlCloseCursor(dbcursor)
         sqlCloseConnection(dbConn)
         return iOK
+
 
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py dwDbLoadJSONFile 1",str(ex.args),str(type(ex)),"Error loading into database for Match ID = " + str(matchInfofromCSV) + "-" + str(matchStatsInfofromURL))

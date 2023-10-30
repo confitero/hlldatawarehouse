@@ -37,6 +37,7 @@ SELECT * FROM playerstats where matchID=52 LIMIT 10
 SELECT distinct a.MatchID,a.Player,a.PlayerClanID,a.PlayerClanTag,d.Side,a.KillsByWeapons FROM playerstats a, gamematch b, weaponkillsbyplayer c, weapon d WHERE a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;
 
 SELECT * FROM weaponkillsbyplayer a WHERE a.weapon  not IN (SELECT DISTINCT weapon FROM weapon);
-SELECT "INSERT INTO weapon ( " DISTINCT Weapon FROM weaponkillsbyplayer a WHERE a.weapon NOT IN (SELECT DISTINCT weapon FROM weapon);
 
 SELECT * from weaponkillsbyplayer where matchID IN (12,27,30,32)
+
+SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=65)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=65),1,0) AS DiffKill_Deaths;

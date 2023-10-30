@@ -187,7 +187,14 @@ UPDATE playerstats a SET a.PlayerSide=0 WHERE a.MatchID=@newMatchID AND EXISTS (
 SELECT distinct a.MatchID,a.Player,a.PlayerClanID,a.PlayerClanTag,d.Side FROM playerstats a, gamematch b, weaponkillsbyplayer c, weapon d WHERE a.MatchID=b.MatchID AND a.MatchID=@newMatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;
 UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID=b.MatchID AND a.MatchID=@newMatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;
 
-###Verificar que NO ha quedado ningún jugador (no streamers) sin bando
+##11.5) RELLENAR EL BANDO DE CADA JUGADOR EN LA PARTIDA a partir del bando de las armas que les han matado, si no tiene kills y tiene muertes, sobreescribiendo los anteriores
+SELECT distinct a.MatchID,a.Player,a.Kills,a.Deaths,a.PlayerClanID,a.PlayerClanTag,a.PlayerSide,d.Side,a.DeathsByWeapons FROM playerstats a, weapondeathsbyplayer c, weapon d WHERE a.MatchID=@newMatchID AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;
+SELECT * FROM playerstats WHERE matchID=63 AND player='Alwarteru'
+UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=2 WHERE a.MatchID=@newMatchID AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=1;
+UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=1 WHERE a.MatchID=@newMatchID AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2;
+
+
+##11.6) Verificar que NO ha quedado ningún jugador (no streamers) sin bando
 SELECT CASE when PlayerSide=1 then 'Allies' WHEN PlayerSide=2 then 'Axis' when PlayerSide=0 then 'Streamers' ELSE 'NO side' END AS Side,COUNT(*) AS Jugadores FROM playerstats WHERE matchID=@newMatchID GROUP BY PlayerSide;
 SELECT MatchID,SteamID,player,PlayerClanTag,PlayerClanID,PlayerSide FROM playerstats WHERE matchID=@newMatchID AND PlayerSide NOT IN (1,2);
 SELECT MatchID,SteamID,player,PlayerClanTag,PlayerClanID,PlayerSide FROM playerstats WHERE matchID=@newMatchID;
