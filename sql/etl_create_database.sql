@@ -9,20 +9,24 @@ SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
--- -----------------------------------------------------
--- Schema hlldw
--- -----------------------------------------------------
+
+SET @schemaName='hlldw';
 
 -- -----------------------------------------------------
 -- Schema hlldw
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `hlldw` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ;
-USE `hlldw` ;
+SET @strSQL=CONCAT('CREATE SCHEMA IF NOT EXISTS ', @schemaName, ' DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
+PREPARE S1 FROM @strSQL;
+EXECUTE S1;
+
+SET @strSQL=CONCAT('USE ',@schemaName);
+PREPARE S1 FROM @strSQL;
+EXECUTE S1;
 
 -- -----------------------------------------------------
--- Table `hlldw`.`Map`
+-- Table `Map`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Map` (
+CREATE TABLE IF NOT EXISTS `Map` (
   `MapID` TINYINT(1) UNSIGNED NOT NULL COMMENT 'Map identifier for this DB',
   `MapName` VARCHAR(50) NOT NULL COMMENT 'Map place in English / local',
   `MapKey` VARCHAR(50) NOT NULL COMMENT 'HLL RCON Map key name',
@@ -32,9 +36,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`Competition`
+-- Table `Competition`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Competition` (
+CREATE TABLE IF NOT EXISTS `Competition` (
   `CompetitionID` INT UNSIGNED NOT NULL COMMENT '1 record = 1 competition edition (i.e. HLL Seasonal Sprint 2024)',
   `CompetitionName` VARCHAR(100) NOT NULL COMMENT 'Competition Phase Name, i.e. HCA-2022 week 5',
   `CompetitionOrga` VARCHAR(50) NOT NULL COMMENT 'Competition orga (i.e. HLL Seasonal / ECL / HCA)',
@@ -43,12 +47,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`GameMatch`
+-- Table `GameMatch`
 -- -----------------------------------------------------
-SET foreign_key_checks = 0;
-drop table `hlldw`.`GameMatch`;
-SET foreign_key_checks = 1;
-CREATE TABLE IF NOT EXISTS `hlldw`.`GameMatch` (
+CREATE TABLE IF NOT EXISTS `GameMatch` (
   `MatchID` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Internal database match ID / Identificador único en la base de datos de este partido',
   `CMID` INT UNSIGNED NOT NULL COMMENT 'Community/Clan database ID that hosted this match (see Community table)',
   `RCONMatchID` INT UNSIGNED NOT NULL COMMENT 'Field \"result\".\"id\" from match JSON stats (unique to RCON database)',
@@ -61,7 +62,6 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`GameMatch` (
   `DurationSec` INT UNSIGNED NULL COMMENT 'Match duration in seconds',
   `RCONMapName` VARCHAR(50) NULL,
   `RCONServerNumber` VARCHAR(5) NULL,
-  `StatsServerName` VARCHAR(45) NULL COMMENT 'Server name hosting match stats webpage',
   `StatsUrl` VARCHAR(2048) NULL COMMENT 'URL of match stats webpage',
   `JSONStatsURL` VARCHAR(2048) NULL,
   `GameServerName` VARCHAR(255) NULL COMMENT 'HLL Server name',
@@ -77,21 +77,21 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`GameMatch` (
   INDEX `fkGameMatch_Competition_idx` (`CompetitionID` ASC) VISIBLE,
   CONSTRAINT `fkGameMatch_MapID`
     FOREIGN KEY (`MapID`)
-    REFERENCES `hlldw`.`Map` (`MapID`)
+    REFERENCES `Map` (`MapID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fkGameMatch_CompetitionID`
     FOREIGN KEY (`CompetitionID`)
-    REFERENCES `hlldw`.`Competition` (`CompetitionID`)
+    REFERENCES `Competition` (`CompetitionID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
-ENGINE = InnoDB
+ENGINE = INNODB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`Clan`
+-- Table `Clan`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Clan` (
+CREATE TABLE IF NOT EXISTS `Clan` (
   `ClanID` SMALLINT UNSIGNED NOT NULL,
   `ClanName` VARCHAR(100) NOT NULL,
   `Country` VARCHAR(50) NULL,
@@ -102,9 +102,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`ClansInMatch`
+-- Table `ClansInMatch`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`ClansInMatch` (
+CREATE TABLE IF NOT EXISTS `ClansInMatch` (
   `MatchID` INT UNSIGNED NOT NULL,
   `ClanID` SMALLINT UNSIGNED NOT NULL,
   `Side` TINYINT(1) UNSIGNED NOT NULL COMMENT '1 Allies; 2 Axis / One clan can play the match balanced between the two sides',
@@ -113,47 +113,46 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`ClansInMatch` (
   PRIMARY KEY (`MatchID`, `ClanID`, `Side`),
   CONSTRAINT `fkClansInMatch_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fkClansInMatch_ClanID`
     FOREIGN KEY (`ClanID`)
-    REFERENCES `hlldw`.`Clan` (`ClanID`)
+    REFERENCES `Clan` (`ClanID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`Player`
+-- Table `Player`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Player` (
-  `DWPlayerID` INT UNSIGNED NOT NULL COMMENT 'Database internal player ID',
-  `SteamID` VARCHAR(50) NOT NULL,
-  `Rank` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (`DWPlayerID`))
-ENGINE = InnoDB
+CREATE TABLE `player` (
+	`DWPlayerID` VARCHAR(30) NOT NULL COMMENT 'Database internal player ID' COLLATE 'utf8mb4_unicode_ci',
+	`SteamID` VARCHAR(30) NOT NULL COLLATE 'utf8mb4_unicode_ci',
+	`Rank` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
+	PRIMARY KEY (`DWPlayerID`) USING BTREE
+)
+COLLATE='utf8mb4_unicode_ci'
+ENGINE=InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`Community`
+-- Table `Community`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Community` (
+CREATE TABLE IF NOT EXISTS `Community` (
   `CMID` INT NOT NULL COMMENT 'Game Community internal database ID',
   `CommunityName` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`CMID`),
   UNIQUE INDEX `CMID_UNIQUE` (`CMID` ASC) VISIBLE,
   UNIQUE INDEX `CommunityName_UNIQUE` (`CommunityName` ASC) VISIBLE)
-ENGINE = InnoDB
+ENGINE = INNODB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`PlayerStats`
+-- Table `PlayerStats`
 -- -----------------------------------------------------
-SET foreign_key_checks = 0;
-drop table `hlldw`.`PlayerStats`;
-SET foreign_key_checks = 1;
-CREATE TABLE IF NOT EXISTS `hlldw`.`PlayerStats` (
+CREATE TABLE IF NOT EXISTS `PlayerStats` (
   `CMID` INT NOT NULL COMMENT 'Community/Clan database ID (see Community table)',
   `MatchID` INT UNSIGNED NOT NULL COMMENT 'DB Match ID',
   `Player` VARCHAR(50) NOT NULL COMMENT 'Player\'s game nick (Steam Nick) as shown in HLL C-RCON stats',
@@ -190,25 +189,26 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`PlayerStats` (
   INDEX `fkPlayer_DWPlayerID_idx` (`DWPlayerID` ASC) VISIBLE,
   CONSTRAINT `fkPlayerStats_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fkPlayerStats_DWPlayerID`
     FOREIGN KEY (`DWPlayerID`)
-    REFERENCES `hlldw`.`Player` (`DWPlayerID`)
+    REFERENCES `Player` (`DWPlayerID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fkPlayerStats_CMID`
     FOREIGN KEY (`CMID`)
-    REFERENCES `hlldw`.`Community` (`CMID`)
+    REFERENCES `Community` (`CMID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
-ENGINE = InnoDB
+ENGINE = INNODB;
+
 
 -- -----------------------------------------------------
--- Table `hlldw`.`KillsByPlayer`
+-- Table `KillsByPlayer`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`KillsByPlayer` (
+CREATE TABLE IF NOT EXISTS `KillsByPlayer` (
   `MatchID` INT UNSIGNED NOT NULL COMMENT 'Identificador único del partido de estos resultados del jugador',
   `Killer` VARCHAR(50) NOT NULL COMMENT 'Player game nick that has killed the victim / Nombre del jugador en Steam-HLL que ha causado estas bajas a la Victim en este partido',
   `Victim` VARCHAR(50) NOT NULL COMMENT 'Player game nick death by killer / Nombre del jugador en Steam-HLL que ha sufrido muertes por el Killer en ese partido',
@@ -216,16 +216,16 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`KillsByPlayer` (
   INDEX `fkKills_GameMatch_idx` (`MatchID` ASC),
   CONSTRAINT `fkKills_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`DeathsByPlayer`
+-- Table `DeathsByPlayer`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`DeathsByPlayer` (
+CREATE TABLE IF NOT EXISTS `DeathsByPlayer` (
   `MatchID` INT UNSIGNED NOT NULL COMMENT 'Identificador único del partido de estos resultados del jugador',
   `Victim` VARCHAR(50) NOT NULL COMMENT 'Player game nick death by killer / Nombre del jugador en Steam/HLL que ha sufrido muertes en este partido por parte del Killer',
   `Killer` VARCHAR(50) NOT NULL COMMENT 'Player game nick that has killed the victim / Nombre del jugador en Steam/HLL que ha matado a la Victim en este partido',
@@ -233,16 +233,16 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`DeathsByPlayer` (
   INDEX `fkDeaths_GameMatch_idx` (`MatchID` ASC),
   CONSTRAINT `fkDeaths_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`WeaponKillsByPlayer`
+-- Table `WeaponKillsByPlayer`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`WeaponKillsByPlayer` (
+CREATE TABLE IF NOT EXISTS `WeaponKillsByPlayer` (
   `MatchID` INT UNSIGNED NOT NULL COMMENT 'Identificador único del partido de estos resultados del jugador',
   `Player` VARCHAR(50) NOT NULL COMMENT 'Player game nick that has win this kills by this weapon / Nombre del jugador en Steam/HLL que ha causado estas bajas enemigas en este partido',
   `Weapon` VARCHAR(500) NOT NULL COMMENT 'Name of weapon / Arma con la que el jugador ha causado las bajas',
@@ -250,32 +250,32 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`WeaponKillsByPlayer` (
   INDEX `fkWeapinKills_GameMatch_idx` (`MatchID` ASC),
   CONSTRAINT `fkWeaponKills_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`ClanTag`
+-- Table `ClanTag`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`ClanTag` (
+CREATE TABLE IF NOT EXISTS `ClanTag` (
   `ClanTag` VARCHAR(15) NOT NULL COMMENT 'Clan tag must be unique. If collision between two or more clans, use aditional prefix/sufix to made unique (country, region, continent, etc)',
   `ClanID` SMALLINT UNSIGNED NOT NULL,
   PRIMARY KEY (`ClanTag`),
   INDEX `fkClanTag_Clan_ClanID_idx` (`ClanID` ASC),
   CONSTRAINT `fkClanTag_Clan_ClanID`
     FOREIGN KEY (`ClanID`)
-    REFERENCES `hlldw`.`Clan` (`ClanID`)
+    REFERENCES `Clan` (`ClanID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`PlayerNicks`
+-- Table `PlayerNicks`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`PlayerNicks` (
+CREATE TABLE IF NOT EXISTS `PlayerNicks` (
   `SteamID` VARCHAR(30) NOT NULL,
   `PlayerNick` VARCHAR(50) NOT NULL COMMENT 'Player Steam nick',
   `MainNick` BIT(1) NULL COMMENT '1 = main nick / 0 = secondary nick used in some matches',
@@ -284,9 +284,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`Weapon`
+-- Table `Weapon`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Weapon` (
+CREATE TABLE IF NOT EXISTS `Weapon` (
   `WeaponID` INT UNSIGNED NOT NULL,
   `Weapon` VARCHAR(500) NULL,
   `Category1` VARCHAR(50) NOT NULL,
@@ -303,9 +303,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`MatchSquads`
+-- Table `MatchSquads`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`MatchSquads` (
+CREATE TABLE IF NOT EXISTS `MatchSquads` (
   `MatchID` INT UNSIGNED NOT NULL,
   `Player` VARCHAR(50) NOT NULL,
   `SteamID` VARCHAR(30) NOT NULL,
@@ -316,16 +316,16 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`MatchSquads` (
   INDEX `fk_MatchSquads_GameMatch_MatchID_idx` (`MatchID` ASC),
   CONSTRAINT `fk_MatchSquads_GameMatch_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`PlayerHits`
+-- Table `PlayerHits`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`PlayerHits` (
+CREATE TABLE IF NOT EXISTS `PlayerHits` (
   `MatchID` INT UNSIGNED NOT NULL,
   `Player` VARCHAR(50) NOT NULL,
   `Victim` VARCHAR(50) NOT NULL,
@@ -333,19 +333,19 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`PlayerHits` (
   `HitTime` DATETIME NOT NULL,
   `Type` VARCHAR(50) NULL,
   PRIMARY KEY (`MatchID`),
-  UNIQUE INDEX `idx_MatchSquads_1` (`MatchID` ASC, `PlayerNick` ASC),
+  UNIQUE INDEX `idx_MatchSquads_1` (`MatchID` ASC, `Player` ASC),
   CONSTRAINT `fk_PlayerHits_GameMatch`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `hlldw`.`WeaponDeathsByPlayer`
+-- Table `WeaponDeathsByPlayer`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`WeaponDeathsByPlayer` (
+CREATE TABLE IF NOT EXISTS `WeaponDeathsByPlayer` (
   `MatchID` INT UNSIGNED NOT NULL,
   `Player` VARCHAR(50) NOT NULL COMMENT 'Player game nick that has been killed by this weapon / Nombre del jugador en Steam/HLL que ha muerto por esa arma',
   `Weapon` VARCHAR(500) NOT NULL COMMENT 'Name of weapon / Arma con la que el jugador ha muerto',
@@ -353,13 +353,13 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`WeaponDeathsByPlayer` (
   INDEX `fkWeaponDeathsByPlayer_MatchID_idx` (`MatchID` ASC),
   CONSTRAINT `fkWeaponDeathsByPlayer_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
-CREATE TABLE IF NOT EXISTS `hlldw`.`MatchStreamers` (
+CREATE TABLE IF NOT EXISTS `MatchStreamers` (
   `MatchID` INT UNSIGNED NOT NULL,
   `SteamID` VARCHAR(30) NOT NULL,
   `Side` TINYINT UNSIGNED NOT NULL COMMENT '1 Allies; 2 Axis; 0 both',
@@ -367,10 +367,10 @@ CREATE TABLE IF NOT EXISTS `hlldw`.`MatchStreamers` (
   PRIMARY KEY (`MatchID`, `SteamID`),
   CONSTRAINT `fk_MatchStreamers_MatchID`
     FOREIGN KEY (`MatchID`)
-    REFERENCES `hlldw`.`GameMatch` (`MatchID`)
+    REFERENCES `GameMatch` (`MatchID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
-ENGINE = INNODB
+ENGINE = INNODB;
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

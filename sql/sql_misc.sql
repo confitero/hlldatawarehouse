@@ -82,3 +82,5 @@ AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weap
 
 SET @newMatchID=76;
 SELECT * FROM matchsquads WHERE matchID=@newMatchID
+
+SELECT * FROM playerstats WHERE PlayerClanID IS NULL ORDER BY player

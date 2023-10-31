@@ -1,0 +1,3 @@
+2023-10-31 13:36:39,817 ERROR root Error in HLL_DW_DBLoad.py sqlCheckConsistency 1 || args:  || ErrDesc:  ||ErrMsg: Warning1: checking sum kills in killsbyplayer-deathsbyplayer for match = 1
+2023-10-31 13:36:39,819 ERROR root Error in HLL_DW_DBLoad.py sqlCheckConsistency 1 || args:  || ErrDesc:  ||ErrMsg: Warning4: checking sum kills in playerstats matches sum deaths in playerstats for match = 1
+2023-10-31 13:36:39,820 ERROR root Error in HLL_DW_DBLoad.py sqlCheckConsistency 1 || args:  || ErrDesc:  ||ErrMsg: Warning6: checking consistency players (victims) in killsbyplayer-playerstats for match = 1

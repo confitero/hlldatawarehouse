@@ -45,29 +45,29 @@ INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (40,'BIO
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (41,'EVO','',580,'EVO');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (42,'82nd Airborne Division','UK',579,'82AD');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (43,'D.C.','Latam',575,'D.C.');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (44,'CC','',566,'CC ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (45,'Exdodus','EUROPE',565,'EXD ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (46,'The Barbed Wire Collectors Club','',560,'BWCC ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (47,'DCR','',556,'DCR ');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (44,'CC','',566,'CC');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (45,'Exdodus','EUROPE',565,'EXD');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (46,'The Barbed Wire Collectors Club','',560,'BWCC');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (47,'DCR','',556,'DCR');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (48,'Let Loosers','',555,'LetLoosers');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (49,'EASY TAC-Team','USA',549,'EASY ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (50,'HLL.PL','Polland',540,'HLL.PL ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (51,'TBGC','',538,'TBGC ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (52,'38.','Germany',534,'38. ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (53,'10th Mountain Division','USA',533,'10thMD ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (54,'GLOW','',532,'GLOW ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (55,'Cult','',525,'Cult ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (56,'MF','',525,'MF ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (57,'CSP','',522,'CSP ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (58,'No. 1 Commando','UK',520,'1CDO ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (59,'Luftwaffen-Jäger-Regiment 46','',513,'LwJg46 ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (60,'LL','',510,'LL ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (61,'Merc','',504,'Merc ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (62,'Sturm Elite','Brazil',503,'SE:VH ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (63,'Tango','Latam',496,'Tango ');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (49,'EASY TAC-Team','USA',549,'EASY');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (50,'HLL.PL','Polland',540,'HLL.PL');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (51,'TBGC','',538,'TBGC');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (52,'38.','Germany',534,'38.');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (53,'10th Mountain Division','USA',533,'10thMD');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (54,'GLOW','',532,'GLOW');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (55,'Cult','',525,'Cult');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (56,'MF','',525,'MF');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (57,'CSP','',522,'CSP');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (58,'No. 1 Commando','UK',520,'1CDO');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (59,'Luftwaffen-Jäger-Regiment 46','',513,'LwJg46');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (60,'LL','',510,'LL');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (61,'Merc','',504,'Merc');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (62,'Sturm Elite','Brazil',503,'SE:VH');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (63,'Tango','Latam',496,'Tango');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (64,'20th PzG','',477,'20th');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (65,'TN','',453,'TN ');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (66,'PKKA','Russia',402,'PKKA ');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (65,'TN','',453,'TN');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (66,'PKKA','Russia',402,'PKKA');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (68,'Malditos Bastardos','Spain',0,'BST2');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (69,'WAR','Russia',0,'WAR');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) values (70,'Jager','Russia',0,'JG');
@@ -101,7 +101,7 @@ INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (115,'He
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (116,'Broken Arrow','',0,'BA');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (117,'ITK','',0,'ITK');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (118,'Central Alliance','',0,'CA');
-INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (119,'-🆁ONIN-','LATAM',0,'-🆁-');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (119,'RONIN-','LATAM',0,'-🆁-');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (120,'POWERBITS Game Team','',0,'PBS');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (121,'BAIZE','',0,'BAIZE');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (122,'Black Knight Gaming','',0,'BKG');
@@ -132,11 +132,6 @@ INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (146,'UC
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (147,'Spanish Hell','',0,'SPH');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (148,'Black Bees','',0,'BxB');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (149,'Hell\'s Fire','',0,'HFL');
-
-#FIX clan acro
-UPDATE clan SET ClanAcro=TRIM(ClanAcro);
-UPDATE clan SET ClanName=TRIM(ClanName);
-
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # CLAN TAGs / Etiquetas de clan
@@ -249,3 +244,5 @@ INSERT INTO clantag (ClanID,ClanTag) VALUES (147,'[SPH]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (147,'[SPH-r]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (148,'[BxB]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (149,'[HFL]');
+INSERT INTO clantag (ClanID,ClanTag) VALUES (119,'-🆁-');
+
