@@ -197,6 +197,83 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillPlayerMatchSide 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
         return -1
 
+def sqlFillMatchRolesAux (MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole):
+    """Aux function to form SQL string to insert match squad roles to every player
+
+    Args:
+        MatchDbID (int): Match database internal ID
+        squadRole (string): Role to set to player squad (Commander, Armored, Artillery, Recon)
+        weaponCategory1 (string): kill weapon from table field weapon.Category1 made by player
+        weaponthreshold (string): Threshold of kills of total kills from player to set the squad role
+        playerRole (string): Role to set to player
+
+    Returns:
+        string: SQL sentence to insert match squad role
+    """
+
+    strsql=f"INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) \
+            SELECT DISTINCT {MatchDbID},a.player,a.SteamID,'{squadRole}','{playerRole}',c.category1,a.PlayerSide \
+            FROM playerstats a, weaponkillsbyplayer b, weapon c \
+            WHERE a.MatchID={MatchDbID} AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='{weaponCategory1}' \
+            AND a.Kills>0 AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE a.MatchID={MatchDbID} AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='{weaponCategory1}' GROUP BY a.Player HAVING (SUM(b.Kills)/a.Kills)>={weaponthreshold});"
+    return strsql
+
+def sqlFillMatchRoles (dbcursor,MatchDbID):
+    """Fill table matchsquads based on match kills weapons used by player. Incoherences may be generated for players changing side in the same match.
+        Players with no kills won't have matchrole
+    
+    Args:
+        dbcursor (cursor): opened cursor to database
+        MatchDbID (int): Match internal database ID for player stats
+
+    Returns:
+        int: 0 if no errors; -1 if any error
+    """
+    
+    try:
+        #Fill Commanders role (players with at least 1 kill made by commander category weapon)
+        weaponthreshold="0"
+        squadRole="Commander"
+        weaponCategory1="Commander"
+        playerRole="Commander"
+        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        dbcursor.execute(strsql)
+
+        #Fill Armored role (players with at least 20% of theirs kills are made by tank weapons)
+        weaponthreshold="0.20"
+        squadRole="Armored"
+        weaponCategory1="Tank"
+        playerRole="Tank-crew"
+        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        dbcursor.execute(strsql)
+
+        #Fill Artillery role (players with at least 30% of theirs kills are made by artillery weapons)
+        weaponthreshold="0.30"
+        squadRole="Artillery"
+        weaponCategory1="Artillery"
+        playerRole="Artilleryman"
+        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        dbcursor.execute(strsql)
+
+        #Fill Sniper role (players with at least 50% of theirs kills are made by sniper weapons)
+        weaponthreshold="0.50"
+        squadRole="Recon"
+        weaponCategory1="Recon"
+        playerRole="Sniper"
+        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        dbcursor.execute(strsql)
+
+        #Set squad type as Infantry to rest of players in that match
+        strsql=f"INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) \
+            SELECT DISTINCT {MatchDbID},a.player,a.SteamID,'Infantry','Infantry','Infantry',a.PlayerSide FROM playerstats a \
+            WHERE a.MatchID={MatchDbID} AND a.Player not IN (SELECT DISTINCT x.Player FROM matchsquads x WHERE x.MatchID={MatchDbID})"
+        dbcursor.execute(strsql)
+
+        return 0
+    except Exception as ex:
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillMatchRoles 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
+        return -1
+
 def sqlInsertPlayerStats(dbcursor,playerStats):
     """Insert player match stats into database
 
@@ -295,7 +372,7 @@ def sqlPreCheckNumPlayers(dbcursor):
     try:
         dbcursor.execute(strsql)
         if dbcursor.fetchone()[0]==1:
-            HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlPreCheckNumPlayers 1","","","Error pre-checking gobally count distinct SteamID not equal in playerstats and players")
+            HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlPreCheckNumPlayers 1","","","Warning: pre-checking gobally count distinct SteamID not equal in playerstats and players")
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlPreCheckNumPlayers 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " ))")
@@ -308,7 +385,7 @@ def sqlCheckMatchNumPlayers(dbcursor,MatchDbID):
         if dbcursor.execute(strsql):
             NumPlayers=dbcursor.fetchone()[0]
             if NumPlayers>=1:
-                HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 1","","","Error: not all match players exists in table player for matchID = " + str(MatchDbID))
+                HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 1","","","Warning: not all match players exists in table player for matchID = " + str(MatchDbID))
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " ))")
@@ -330,48 +407,48 @@ def sqlCheckConsistency(strsql,dbcursor,strerror):
 def sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID):
 
     strsql=f"SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID={MatchDbID})<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in killsbyplayer-deathsbyplayer for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning1: checking sum kills in killsbyplayer-deathsbyplayer for match = " + str(MatchDbID))
     
     strsql=f"SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID={MatchDbID})<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Kills;"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in killsbyplayer-weaponkillsbyplayer for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning2: checking sum kills in killsbyplayer-weaponkillsbyplayer for match = " + str(MatchDbID))
 
     strsql=f"SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID={MatchDbID})<>(SELECT SUM(kills) FROM killsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in playerstats-killsbyplayer for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning3: checking sum kills in playerstats-killsbyplayer for match = " + str(MatchDbID))
 
     strsql=f"SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID={MatchDbID})<>(SELECT SUM(deaths) FROM playerstats WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking sum kills in playerstats matches sum deaths in playerstats for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning4: checking sum kills in playerstats matches sum deaths in playerstats for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID={MatchDbID} AND killer NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in killsbyplayer-playerstats for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning5: checking consistency players (killers) in killsbyplayer-playerstats for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID={MatchDbID} AND victim NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in killsbyplayer-playerstats for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning6: checking consistency players (victims) in killsbyplayer-playerstats for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID={MatchDbID} AND victim NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency victim players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning7: checking consistency victim players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID={MatchDbID} AND killer NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency killer players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning8: checking consistency killer players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weaponkillsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in weaponkillsbyplayer-playerstats for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning9: checking consistency players in weaponkillsbyplayer-playerstats for match = " + str(MatchDbID))
 
-    # Disabled to avoid errors when loading old matches that don't have JSON weapondeathsbyplayer field
-    #strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weapondeathsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    #sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in weapondeathsbyplayer-playerstats for match = " + str(MatchDbID))
-    
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM killsbyplayer WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in playerstats-killsbyplayer for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning10: checking consistency players in playerstats-killsbyplayer for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND Deaths>0 AND player NOT IN (SELECT player FROM deathsbyplayer WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in playerstats-deathsbyplayer for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning11: checking consistency players in playerstats-deathsbyplayer for match = " + str(MatchDbID))
 
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM weaponkillsbyplayer WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking consistency players in playerstats-weaponkillsbyplayer for match = " + str(MatchDbID))
+    sqlCheckConsistency(strsql,dbcursor,"Warning12: checking consistency players in playerstats-weaponkillsbyplayer for match = " + str(MatchDbID))
 
     strsql=f"SELECT count(*) FROM playerstats WHERE SteamID=0 AND matchID={MatchDbID};"
-    sqlCheckConsistency(strsql,dbcursor,"Error checking playerstat, found players with steamID=0 for match = " + str(MatchDbID))
-   
+    sqlCheckConsistency(strsql,dbcursor,"Warning13: checking playerstat, found players with steamID=0 for match = " + str(MatchDbID))
+
+    # Disabled to avoid Warning:s when loading old matches that don't have JSON weapondeathsbyplayer field
+    #strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weapondeathsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
+    #sqlCheckConsistency(strsql,dbcursor,"Warning14: checking consistency players in weapondeathsbyplayer-playerstats for match = " + str(MatchDbID))
+
 
 def dbLoadNemesisList (MatchDbID,player,jsonNemesisList,dbcursor):
 
@@ -615,6 +692,7 @@ def dwDbLoadMatchJSON(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbser
             if iOK>=0: iOK+=sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsInfofromURL)
             if iOK>=0: iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
             if iOK>=0: iOK+=sqlFillPlayerMatchSide (dbcursor,MatchDbID)
+            if iOK>=0: iOK+=sqlFillMatchRoles (dbcursor,MatchDbID)
             if iOK<0:
                 sqlAbort(dbConn)
             else:

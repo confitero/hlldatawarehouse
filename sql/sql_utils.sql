@@ -6,7 +6,7 @@ XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 #Delete match by ID
 
-SET @MatchIDList='56';
+SET @MatchIDList='78';
 DELETE FROM deathsbyplayer WHERE find_in_set(matchID,@MatchIDList);
 DELETE FROM killsbyplayer WHERE find_in_set(matchID,@MatchIDList);
 DELETE FROM weaponkillsbyplayer WHERE find_in_set(matchID,@MatchIDList);
@@ -19,6 +19,12 @@ delete from player where DWPlayerID not in (select distinct DWPlayerID from play
 delete from playernicks where SteamID not in (select distinct SteamID from playerstats);
 SET foreign_key_checks = 1;
 delete from gamematch where find_in_set(matchID,@MatchIDList);
+
+XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
+
+#Fill and replace Players TAG and ClanID
+
+UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where locate(y.clantag,x.Player)>0;
 
 XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 

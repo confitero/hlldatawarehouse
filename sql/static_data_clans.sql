@@ -128,6 +128,10 @@ INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (142,'NP
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (143,'101st Assault Division','',0,'101stAD');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (144,'Barb Wire & Beers','',0,'BWB');
 INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (145,'J7','',0,'J7');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (146,'UCE','',0,'UCE');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (147,'Spanish Hell','',0,'SPH');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (148,'Black Bees','',0,'BxB');
+INSERT INTO clan (ClanID,ClanName,Country,LastHeloRank,ClanAcro) VALUES (149,'Hell\'s Fire','',0,'HFL');
 
 #FIX clan acro
 UPDATE clan SET ClanAcro=TRIM(ClanAcro);
@@ -240,4 +244,8 @@ INSERT INTO clantag (ClanID,ClanTag) VALUES (104,'[25◯H]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (105,'[129]');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (106,'EG |');
 INSERT INTO clantag (ClanID,ClanTag) VALUES (107,'GBI |');
-
+INSERT INTO clantag (ClanID,ClanTag) VALUES (146,'[UCE]');
+INSERT INTO clantag (ClanID,ClanTag) VALUES (147,'[SPH]');
+INSERT INTO clantag (ClanID,ClanTag) VALUES (147,'[SPH-r]');
+INSERT INTO clantag (ClanID,ClanTag) VALUES (148,'[BxB]');
+INSERT INTO clantag (ClanID,ClanTag) VALUES (149,'[HFL]');

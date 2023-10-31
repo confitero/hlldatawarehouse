@@ -138,11 +138,12 @@ ENGINE = InnoDB
 -- -----------------------------------------------------
 -- Table `hlldw`.`Community`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hlldw`.`Player` (
-  `DWPlayerID` VARCHAR(30) NOT NULL COMMENT 'Database internal player ID',
-  `SteamID` VARCHAR(30) NOT NULL,
-  `Rank` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (`DWPlayerID`))
+CREATE TABLE IF NOT EXISTS `hlldw`.`Community` (
+  `CMID` INT NOT NULL COMMENT 'Game Community internal database ID',
+  `CommunityName` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`CMID`),
+  UNIQUE INDEX `CMID_UNIQUE` (`CMID` ASC) VISIBLE,
+  UNIQUE INDEX `CommunityName_UNIQUE` (`CommunityName` ASC) VISIBLE)
 ENGINE = InnoDB
 
 
@@ -306,12 +307,12 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `hlldw`.`MatchSquads` (
   `MatchID` INT UNSIGNED NOT NULL,
-  `PlayerNick` VARCHAR(50) NOT NULL,
+  `Player` VARCHAR(50) NOT NULL,
   `SteamID` VARCHAR(30) NOT NULL,
   `SquadRole` VARCHAR(50) NOT NULL,
   `PlayerRole` VARCHAR(50) NOT NULL,
   `SquadName` VARCHAR(50) NOT NULL,
-  `Side` TINYINT(1) UNSIGNED NOT NULL,
+  `Side` TINYINT(1) UNSIGNED,
   INDEX `fk_MatchSquads_GameMatch_MatchID_idx` (`MatchID` ASC),
   CONSTRAINT `fk_MatchSquads_GameMatch_MatchID`
     FOREIGN KEY (`MatchID`)
@@ -326,7 +327,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `hlldw`.`PlayerHits` (
   `MatchID` INT UNSIGNED NOT NULL,
-  `PlayerNick` VARCHAR(50) NOT NULL,
+  `Player` VARCHAR(50) NOT NULL,
   `Victim` VARCHAR(50) NOT NULL,
   `Weapon` VARCHAR(500) NOT NULL,
   `HitTime` DATETIME NOT NULL,

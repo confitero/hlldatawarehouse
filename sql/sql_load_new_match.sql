@@ -204,8 +204,8 @@ SELECT MatchID,SteamID,player,PlayerClanTag,PlayerClanID,PlayerSide FROM players
 SET @ExcluirReglasClanID='ID1,ID2,ID3'; # SET @ExcluirReglasClanID=NUM >>>>>>>> Para excluir el clan con ese ID y así introducir manualmente la formación detallada  | 0 para meter todos los clanes
 
 #Comandantes: regla # Comandante = aquellos jugadores de la partida que hayan matado con armas de categoría1 Comandante
-INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) SELECT DISTINCT @newMatchID,a.player,a.SteamID,c.category1,c.category1,c.category1,d.Side FROM playerstats a, weaponkillsbyplayer b, weapon c, clansinmatch d where
- a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='Commander' AND a.MatchID=d.MatchID AND a.PlayerClanID=d.ClanID AND FIND_IN_SET(a.PlayerClanID,@ExcluirReglasClanID)>0;
+INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) SELECT DISTINCT @newMatchID,a.player,a.SteamID,c.category1,c.category1,c.category1,a.PlayerSide FROM playerstats a, weaponkillsbyplayer b, weapon c where
+ a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='Commander' AND FIND_IN_SET(a.PlayerClanID,@ExcluirReglasClanID)>0;
 
 #Blindados: regla # Tank = aquellos jugadores de la partida que hayan matado con armas de categoría1 Tank y esas kills sean >=20% de sus kills totales por jugador
 INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side)
