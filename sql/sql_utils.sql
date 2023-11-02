@@ -2,6 +2,11 @@
 
 #Select and execute one SQL util block each time. There are Error break lines between blocks to avoid full script file execution
 
+SHOW SESSION VARIABLES LIKE 'character\_set\_%';
+SHOW SESSION VARIABLES LIKE 'collation\_%';
+SET collation_connection = @@collation_database;
+
+
 XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 
 #Delete match by ID
