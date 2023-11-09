@@ -5,7 +5,7 @@
 SET collation_connection = @@collation_database;
 
 #Match ID to get report€
-SET @MatchID=4;
+SET @MatchID=6;
 
 ################################################################################################################################################################
 # L1 - Match player list
@@ -46,21 +46,21 @@ GROUP BY b.SquadRole,b.PlayerRole
 
 
 # L4 Percentile report
-SELECT '>=95%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 95 AND 100
+SELECT '>=95%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 95 AND 100
 union
-SELECT '90-94%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 90 AND 94.99
+SELECT '90-94%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 90 AND 94.99
 union
-SELECT '76-89%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 76 AND 89.99
+SELECT '76-89%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 76 AND 89.99
 union
-SELECT '50-75%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 50 AND 75.99
+SELECT '50-75%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 50 AND 75.99
 union
-SELECT '25-50%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 25 AND 49.99
+SELECT '25-50%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 25 AND 49.99
 union
-SELECT '10-25%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 10 AND 24.99
+SELECT '10-25%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 10 AND 24.99
 UNION
-SELECT '6-10%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 6 AND 9.99
+SELECT '6-10%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 6 AND 9.99
 union
-SELECT '<=5%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a) AS X WHERE x.percentile_rank BETWEEN 0 AND 5.99
+SELECT '<=5%' AS 'Percentile',sum(case x.Side when 'Allies' then 1 ELSE 0 end) AS Allies,sum(case x.Side when 'Axis' then 1 ELSE 0 end) AS Axis FROM (SELECT case a.PlayerSide when 1 then 'Allies' when 2 then 'Axis' ELSE '' END AS 'Side',ROUND(100.0 * PERCENT_RANK() OVER (ORDER BY a.Kills),1) as percentile_rank FROM playerstats a where a.MatchID=@MatchID) AS X WHERE x.percentile_rank BETWEEN 0 AND 5.99
 
 
 ################################################################################################################################################################
@@ -157,7 +157,7 @@ SELECT
 	 '    Defensive players total support points' AS Type,
 	 sum(case a.PlayerSide when 1 then if(a.DefensePoints>=a.OffensePoints,a.SupportPoints,0) end) AS 'Allies',
 	 sum(case a.PlayerSide when 2 then if(a.DefensePoints>=a.OffensePoints,a.SupportPoints,0) end) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
+FROM playerstats a WHERE a.MatchID=@MatchID;
 
 
 #R0s2 AVG per player (side)
@@ -183,85 +183,86 @@ SELECT
 	 '    Support points per player (avg)' AS Type,
 	 sum(case a.PlayerSide when 1 then a.SupportPoints ELSE 0 end) / sum(case a.PlayerSide when 1 then 1 ELSE 0 end) AS 'Allies',
 	 sum(case a.PlayerSide when 2 then a.SupportPoints ELSE 0 end) / sum(case a.PlayerSide when 2 then 1 ELSE 0 end) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
+FROM playerstats a WHERE a.MatchID=@MatchID;
 
 # R0s3 Points per player type Offensive/Defensive (avg)
 SET @NumOffensivePlayers_Allies=(SELECT count(*) AS NumOffensivePlayers FROM playerstats a WHERE a.MatchID=@MatchID AND a.PlayerSide=1 AND a.OffensePoints>a.DefensePoints);
 SET @NumOffensivePlayers_Axis=(SELECT count(*) AS NumOffensivePlayers FROM playerstats a WHERE a.MatchID=@MatchID AND a.PlayerSide=2 AND a.OffensePoints>a.DefensePoints);
 SET @NumDefensivePlayers_Allies=(SELECT count(*) AS NumDefensivePlayers FROM playerstats a WHERE a.MatchID=@MatchID AND a.PlayerSide=1 AND a.OffensePoints<=a.DefensePoints);
 SET @NumDefensivePlayers_Axis=(SELECT count(*) AS NumDefensivePlayers FROM playerstats a WHERE a.MatchID=@MatchID AND a.PlayerSide=2 AND a.OffensePoints<=a.DefensePoints);
-SELECT
-	'    Offense points per offensive player (avg)' AS Type,
-	 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.OffensePoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.OffensePoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Defense points per offensive player (avg)' AS Type,
-	 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.DefensePoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.DefensePoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Combat points per offensive player (avg)' AS Type,
-	 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.CombatPoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.CombatPoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Support points per offensive player (avg)' AS Type,
-	 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.SupportPoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.SupportPoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Kills per offensive player (avg)' AS Type,
-	 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.Kills,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.Kills,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Deaths per offensive player (avg)' AS Type,
-	 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.Deaths,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.Deaths,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
--- Defensive players avg
-SELECT
-	'    Offense points per defensive player (avg)' AS Type,
-	 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.OffensePoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.OffensePoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Defense points per defensive player (avg)' AS Type,
-	 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.DefensePoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.DefensePoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Combat points per defensive player (avg)' AS Type,
-	 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.CombatPoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.CombatPoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Support points per defensive player (avg)' AS Type,
-	 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.SupportPoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.SupportPoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Kills per defensive player (avg)' AS Type,
-	 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.Kills,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.Kills,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
-UNION
-SELECT
-	 '    Deaths per defensive player (avg)' AS Type,
-	 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.Deaths,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
- 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.Deaths,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
-FROM playerstats a WHERE a.MatchID=@MatchID
+	# R0s3a Points per player type Offensive (avg)
+	SELECT
+		'    Offense points per offensive player (avg)' AS Type,
+		 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.OffensePoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.OffensePoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Defense points per offensive player (avg)' AS Type,
+		 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.DefensePoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.DefensePoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Combat points per offensive player (avg)' AS Type,
+		 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.CombatPoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.CombatPoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Support points per offensive player (avg)' AS Type,
+		 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.SupportPoints,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.SupportPoints,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Kills per offensive player (avg)' AS Type,
+		 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.Kills,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.Kills,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Deaths per offensive player (avg)' AS Type,
+		 IF(@NumOffensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints>a.DefensePoints,a.Deaths,0) END) / @NumOffensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumOffensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints>a.DefensePoints,a.Deaths,0) END) / @NumOffensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID;
+
+	# R0s3b Points per player type Defensive (avg)
+	SELECT
+		'    Offense points per defensive player (avg)' AS Type,
+		 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.OffensePoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.OffensePoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Defense points per defensive player (avg)' AS Type,
+		 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.DefensePoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.DefensePoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Combat points per defensive player (avg)' AS Type,
+		 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.CombatPoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.CombatPoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Support points per defensive player (avg)' AS Type,
+		 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.SupportPoints,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.SupportPoints,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Kills per defensive player (avg)' AS Type,
+		 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.Kills,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.Kills,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID
+	UNION
+	SELECT
+		 '    Deaths per defensive player (avg)' AS Type,
+		 IF(@NumDefensivePlayers_Allies>0,sum(case a.PlayerSide when 1 then if(a.OffensePoints<=a.DefensePoints,a.Deaths,0) END) / @NumDefensivePlayers_Allies,0) AS 'Allies',
+	 	 IF(@NumDefensivePlayers_Axis>0,sum(case a.PlayerSide when 2 then if(a.OffensePoints<=a.DefensePoints,a.Deaths,0) END) / @NumDefensivePlayers_Axis,0) AS 'Axis'
+	FROM playerstats a WHERE a.MatchID=@MatchID;
 
 
 

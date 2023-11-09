@@ -11,7 +11,8 @@ XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 #Delete match by ID
 
-SET @MatchIDList='78';
+SET @MatchIDList='4';
+DELETE FROM clansinmatch WHERE find_in_set(matchID,@MatchIDList);
 DELETE FROM deathsbyplayer WHERE find_in_set(matchID,@MatchIDList);
 DELETE FROM killsbyplayer WHERE find_in_set(matchID,@MatchIDList);
 DELETE FROM weaponkillsbyplayer WHERE find_in_set(matchID,@MatchIDList);

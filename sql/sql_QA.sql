@@ -5,7 +5,7 @@ UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.C
 
 
 #COMPROBAR QUE TODOS COINCIDEN (sumatorio de kills y death de la partida deben coincidir, salvo caídas de jugadores o cambios de nick entre caídas)
-SET @MatchID=2;
+SET @MatchID=4;
 SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),"Error: player count and playerstats distinct steamID not equal","") AS CheckNumPlayers;
 SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=@MatchID)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=@MatchID),1,0) AS DiffKill_Deaths;
 SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=@MatchID)<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID=@MatchID),1,0) AS DiffKill_Kills;
@@ -47,7 +47,8 @@ LEFT JOIN (SELECT SUM(x3.Kills) AS KillsInweaponkillsbyplayer,x3.Player,x3.Match
 LEFT JOIN (SELECT SUM(x4.Deaths) AS DeathsInweapondeathsbyplayer,x4.Player,x4.MatchID FROM weapondeathsbyplayer x4 GROUP BY x4.Player,x4.MatchID) e ON a.Player=e.Player AND a.MatchID=e.MatchID
 LEFT JOIN (SELECT SUM(x5.kills) AS DeathsInKillsByPlayer,x5.Victim AS player,x5.MatchID FROM killsbyplayer x5 GROUP BY x5.Victim,x5.MatchID) f ON a.Player=f.player AND a.MatchID=f.MatchID
 LEFT JOIN (SELECT SUM(x6.deaths) AS DeathsInDeathsByPlayer,x6.Victim AS player,x6.MatchID FROM deathsbyplayer x6 GROUP BY x6.Victim,x6.MatchID) g ON a.Player=g.player AND a.MatchID=g.MatchID
-WHERE a.MatchID=@MatchID AND (not(a.Kills<=>KillsInKillsByPlayer) OR not(a.Kills<=>KillsIndeathsbyplayer) OR not(a.Kills<=>KillsInweaponkillsbyplayer) OR not(a.Deaths<=>DeathsInweapondeathsbyplayer))
+WHERE a.MatchID=@MatchID AND (a.Kills<>KillsInKillsByPlayer OR a.Kills<>KillsIndeathsbyplayer OR a.Kills<>KillsInweaponkillsbyplayer OR a.Deaths<>DeathsInweapondeathsbyplayer)
+
 
 #Jugadores sin SteamID
 SELECT * FROM playerstats a WHERE a.SteamID=0;

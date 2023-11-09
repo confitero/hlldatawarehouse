@@ -42,6 +42,10 @@ SELECT * FROM weaponkillsbyplayer a WHERE a.weapon  not IN (SELECT DISTINCT weap
 
 SELECT * from weaponkillsbyplayer where matchID IN (12,27,30,32)
 
+SELECT * FROM playerstats WHERE player='beipan'
+{"RuiXero": 1, "Mikebike": 2, "-X- Letal": 2, "-X- MaKana": 1, "[BxB] Junky\u2122": 1}
+SELECT * FROM killsbyplayer WHERE killer LIKE '[BxB] Junky%'
+
 SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=10)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=10),1,0) AS DiffKill_Deaths;
 SELECT b.ClanName,a.PlayerClanTag,a.PlayerClanID,a.* FROM playerstats a,clan b WHERE a.MatchID=10 AND a.PlayerClanID=b.ClanID
 SELECT * FROM playerstats WHERE MatchID=10
@@ -85,4 +89,36 @@ SELECT * FROM matchsquads WHERE matchID=@newMatchID
 
 SELECT * FROM playerstats WHERE PlayerClanID IS NULL ORDER BY player
 
-SELECT * FROM weaponkillsbyplayer WHERE matchID=3 AND player LIKE '%EKOBER%' ORDER BY kills desc
+SELECT * FROM weaponkillsbyplayer WHERE matchID=3 AND player LIKE '%EKOBER%' ORDER BY kills DESC
+
+SELECT PlayerSide,sum(kills),sum(deaths) FROM playerstats WHERE MatchID=4
+GROUP BY PlayerSide
+
+SELECT * FROM Playerstats WHERE PlayerSide IS NULL
+
+ilker.f.sen
+-L- [H9H] Alfrid
+
+SELECT a.Player,1 AS PlayerSideA from playerstats a, weapondeathsbyplayer b, weapon c WHERE a.MatchID=4 AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2;
+SELECT a.Player,1 AS PlayerSideA from playerstats a, weapondeathsbyplayer b, weapon c WHERE a.MatchID=4 AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon;
+
+SELECT * FROM playerstats WHERE matchID=4 AND player='-L- [H9H] Alfrid'
+SELECT * FROM weapondeathsbyplayer WHERE matchID=4 AND player='-L- [H9H] Alfrid'
+
+-- UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=1 WHERE a.MatchID=4 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2 AND a.PlayerSide IS null;
+
+SELECT sum(Kills) FROM playerstats p WHERE p.MatchID=4 AND p.PlayerSide=1
+SELECT sum(Deaths) FROM playerstats p WHERE p.MatchID=4 AND p.PlayerSide=2
+
+SELECT sum(b.Kills) FROM playerstats a, killsbyplayer b WHERE a.MatchID=4 AND a.PlayerSide=2 AND a.MatchID=b.MatchID AND a.Player=b.Victim;
+
+SELECT * FROM playerstats x WHERE x.MatchID=4 AND x.Player IN (SELECT b.Killer FROM playerstats a, killsbyplayer b WHERE a.MatchID=4 AND a.PlayerSide=2 AND a.MatchID=b.MatchID AND a.Player=b.Victim);
+
+SELECT x.playerside,x.* FROM playerstats x WHERE x.MatchID=4 AND x.Player in
+(SELECT victim FROM killsbyplayer  WHERE MatchID=4 AND killer='-x- cheK')
+
+
+
+
+SELECT d.Side,a.Player,a.KillsByWeapons from playerstats a, gamematch b, weaponkillsbyplayer c, weapon d WHERE a.MatchID=4 AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and
+c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x WHERE a.Player=x.Player AND a.MatchID=x.MatchID);
