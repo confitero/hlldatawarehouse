@@ -182,20 +182,14 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
         int: 0 if no errors; -1 if any error
     """
     
-    try:
-        strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;"
+    try:        
+        strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x WHERE a.Player=x.Player AND a.MatchID=x.MatchID);"
         dbcursor.execute(strsql)
 
-        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=2 WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=1;"
-        dbcursor.execute(strsql)
+        # strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0;"
+        # dbcursor.execute(strsql)
 
-        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=1 WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2;"
-        dbcursor.execute(strsql)
-
-        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=1 WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2;"
-        dbcursor.execute(strsql)
-
-        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=2 WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=1;"
+        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.Deaths) FROM weapondeathsbyplayer x WHERE a.Player=x.Player AND a.MatchID=x.MatchID);"
         dbcursor.execute(strsql)
 
         return 0
