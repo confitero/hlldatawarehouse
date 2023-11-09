@@ -34,6 +34,16 @@ CREATE TABLE IF NOT EXISTS `Map` (
   PRIMARY KEY (`MapID`))
 ENGINE = InnoDB;
 
+-- -----------------------------------------------------
+-- Table `MatchType`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `MatchType` (
+  `MatchType` TINYINT UNSIGNED NOT NULL COMMENT 'Match type: 0 = Casual; 1 = Friendly; 2 = Competitive',
+  `MatchTypeDesc` VARCHAR(45) NOT NULL COMMENT 'Description of match type: 0 = Casual; 1 = Friendly; 2 = Competitive',
+  PRIMARY KEY (`MatchType`),
+  UNIQUE INDEX `ix_MatchType_UNIQUE` (`MatchType` ASC),
+  UNIQUE INDEX `ix_MatchTypeDesc_UNIQUE` (`MatchTypeDesc` ASC))
+ENGINE = InnoDB
 
 -- -----------------------------------------------------
 -- Table `Competition`

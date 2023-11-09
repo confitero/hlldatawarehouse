@@ -62,6 +62,11 @@ INSERT INTO map (MapID,MapName,MapKey,MapDesc) VALUES (58,'Kharkov','kharkov_off
 INSERT INTO map (MapID,MapName,MapKey,MapDesc) VALUES (59,'Kharkov','kharkov_offensive_ger','Kharkov Offensive (GER)');
 INSERT INTO map (MapID,MapName,MapKey,MapDesc) VALUES (60,'Kharkov','kharkov_warfare_night','Kharkov (Night)');
 
+# Match types
+INSERT INTO matchtype (MatchType,MatchTypeDesc) VALUES (0,'Casual');
+INSERT INTO matchtype (MatchType,MatchTypeDesc) VALUES (1,'Friendly');
+INSERT INTO matchtype (MatchType,MatchTypeDesc) VALUES (2,'Competitive');
+
 # Communities
 INSERT INTO community (CMID,CommunityName) VALUES (1,'Comunidad Hispana Hell Let Loose');
 

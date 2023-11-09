@@ -15,7 +15,7 @@ SELECT SUM(Deaths) FROM weapondeathsbyplayer;
 SELECT SUM(kills) FROM playerstats;
 SELECT SUM(deaths) FROM playerstats;
 
-SELECT * FROM player LIMIT 10;
+SELECT * FROM playerstats LIMIT 10;
 
 SELECT *
 FROM playerstats a, playerstats b WHERE a.MatchID<>b.matchID AND a.SteamID=b.SteamID
@@ -84,3 +84,5 @@ SET @newMatchID=76;
 SELECT * FROM matchsquads WHERE matchID=@newMatchID
 
 SELECT * FROM playerstats WHERE PlayerClanID IS NULL ORDER BY player
+
+SELECT * FROM weaponkillsbyplayer WHERE matchID=3 AND player LIKE '%EKOBER%' ORDER BY kills desc
