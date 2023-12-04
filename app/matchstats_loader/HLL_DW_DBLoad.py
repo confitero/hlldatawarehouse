@@ -183,13 +183,16 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
     """
     
     try:        
-        strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x WHERE a.Player=x.Player AND a.MatchID=x.MatchID);"
+        strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
         dbcursor.execute(strsql)
 
         # strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0;"
         # dbcursor.execute(strsql)
 
-        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.Deaths) FROM weapondeathsbyplayer x WHERE a.Player=x.Player AND a.MatchID=x.MatchID);"
+        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.deaths) FROM weapondeathsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
+        dbcursor.execute(strsql)
+
+        strsql=f"UPDATE playerstats a, gamematch b, deathsbyplayer c,playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2) WHERE a.Deaths>0 AND a.PlayerSide is null AND a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);"
         dbcursor.execute(strsql)
 
         return 0
@@ -583,17 +586,22 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
             playerStats["KillsByWeapons"]=jsonPlayerStats["weapons"]
             try:
                 # Try to get new fields from new RCON app version or set to 0 if invoquing RCON app version is old
-                playerStats["DeathsByWeapons"]=jsonPlayerStats["death_by_weapons"]
-                playerStats["CombatPoints"]=str(jsonPlayerStats["combat"])
-                playerStats["OffensePoints"]=str(jsonPlayerStats["offense"])
-                playerStats["DefensePoints"]=str(jsonPlayerStats["defense"])
-                playerStats["SupportPoints"]=str(jsonPlayerStats["support"])
+                playerStats["DeathsByWeapons"]="" if str(jsonPlayerStats["death_by_weapons"]) == "None" else jsonPlayerStats["death_by_weapons"]
             except:
                 playerStats["DeathsByWeapons"]=""
+            
+            try:
+                # Try to get new fields from new RCON app version or set to 0 if invoquing RCON app version is old
+                playerStats["CombatPoints"]=str(int(jsonPlayerStats["combat"] or 0))
+                playerStats["OffensePoints"]=str(int(jsonPlayerStats["offense"] or 0))
+                playerStats["DefensePoints"]=str(int(jsonPlayerStats["defense"] or 0))
+                playerStats["SupportPoints"]=str(int(jsonPlayerStats["support"] or 0))          
+            except:
                 playerStats["CombatPoints"]="0"
                 playerStats["OffensePoints"]="0"
                 playerStats["DefensePoints"]="0"
                 playerStats["SupportPoints"]="0"
+
             iOK+=sqlCheckOrInsertPlayer(dbcursor,playerStats)
             iOK+=sqlInsertPlayerStats(dbcursor,playerStats)
             if iOK==0:

@@ -3,3 +3,4 @@ app/.vscode/
 app/matchstats_loader/__pycache__/
 app/matchstats_loader/tests.py
 json_source_stats/*.json
+json_source_stats/previos/*

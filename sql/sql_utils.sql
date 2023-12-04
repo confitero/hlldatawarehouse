@@ -11,20 +11,23 @@ XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 #Delete match by ID
 
-SET @MatchIDList='4';
-DELETE FROM clansinmatch WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM deathsbyplayer WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM killsbyplayer WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM weaponkillsbyplayer WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM weapondeathsbyplayer WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM matchsquads WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM matchstreamers WHERE find_in_set(matchID,@MatchIDList);
-DELETE FROM playerstats WHERE find_in_set(matchID,@MatchIDList);
+SET @MatchIDList='599';
+SET @MatchID1=592;
+SET @MatchID2=1000;
+
+DELETE FROM clansinmatch WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM deathsbyplayer WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM killsbyplayer WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM weaponkillsbyplayer WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM weapondeathsbyplayer WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM matchsquads WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM matchstreamers WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
+DELETE FROM playerstats WHERE find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
 SET foreign_key_checks = 0;
 delete from player where DWPlayerID not in (select distinct DWPlayerID from playerstats);
 delete from playernicks where SteamID not in (select distinct SteamID from playerstats);
 SET foreign_key_checks = 1;
-delete from gamematch where find_in_set(matchID,@MatchIDList);
+delete from gamematch where find_in_set(matchID,@MatchIDList) OR matchID BETWEEN @MatchID1 AND @MatchID2;
 
 XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 

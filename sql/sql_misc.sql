@@ -1,124 +1,69 @@
-USE hlldw;
+-- ### FIX DATA SCRIPTS FOR HLL DATAWAREHOUSE
 
-SHOW SESSION VARIABLES LIKE 'character\_set\_%';
-SHOW SESSION VARIABLES LIKE 'collation\_%';
-SET collation_connection = @@collation_database;
-
-XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
-
-SELECT COUNT(*) FROM playerstats;
-SELECT SUM(kills) FROM killsbyplayer;
-SELECT SUM(deaths) FROM deathsbyplayer;
-
-SELECT SUM(kills) FROM weaponkillsbyplayer;
-SELECT SUM(Deaths) FROM weapondeathsbyplayer;
-SELECT SUM(kills) FROM playerstats;
-SELECT SUM(deaths) FROM playerstats;
-
-SELECT * FROM playerstats LIMIT 10;
-
-SELECT *
-FROM playerstats a, playerstats b WHERE a.MatchID<>b.matchID AND a.SteamID=b.SteamID
-
-SELECT *
-FROM playerstats a
-WHERE a.MatchID=5 AND a.SteamID NOT IN (SELECT b.SteamID from playerstats b WHERE b.MatchID=6)
+#FILL field playerstats.PlayerTag and playerstats.ClanID from embed TAG in player nick RCON json stats
+UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where locate(y.clantag,x.Player)>0
 
 
-#SELECT mapID FROM map WHERE MapKey='stmereeglise_warfare_night'
+#COMPROBAR QUE TODOS COINCIDEN (sumatorio de kills y death de la partida deben coincidir, salvo caídas de jugadores o cambios de nick entre caídas)
+SET @MatchID=4;
+SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),"Error: player count and playerstats distinct steamID not equal","") AS CheckNumPlayers;
+SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=@MatchID)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=@MatchID),1,0) AS DiffKill_Deaths;
+SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=@MatchID)<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID=@MatchID),1,0) AS DiffKill_Kills;
+SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID=@MatchID)<>(SELECT SUM(deaths) FROM playerstats WHERE MatchID=@MatchID),1,0) AS DiffKill_Deaths;
+SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID=@MatchID)<>(SELECT SUM(kills) FROM killsbyplayer WHERE MatchID=@MatchID),1,0) AS DiffKill_Deaths;
 
 
---Ver mismo jugador con SteamID y distinto nick en partidas cargadas
-SELECT distinct a.Player,b.Player from
-playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<>b.Player AND a.MatchID<b.matchID
+SELECT COUNT(*) FROM playerstats WHERE MatchID=@MatchID;
+SELECT SUM(kills) FROM killsbyplayer WHERE MatchID=@MatchID;
+SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=@MatchID;
+SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID=@MatchID;
+SELECT SUM(Deaths) FROM weapondeathsbyplayer WHERE MatchID=@MatchID;
+SELECT SUM(kills) FROM playerstats WHERE MatchID=@MatchID;
+SELECT SUM(deaths) FROM playerstats WHERE MatchID=@MatchID;
+
+#Comprobar que no hay incoherencia entre players en las tablas de una partida
+SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=@MatchID AND killer NOT IN (SELECT player FROM playerstats WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=@MatchID AND victim NOT IN (SELECT player FROM playerstats WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID=@MatchID AND victim NOT IN (SELECT player FROM playerstats WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID=@MatchID AND killer NOT IN (SELECT player FROM playerstats WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM weaponkillsbyplayer WHERE matchID=@MatchID AND player NOT IN (SELECT player FROM playerstats WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM weapondeathsbyplayer WHERE matchID=@MatchID AND player NOT IN (SELECT player FROM playerstats WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=@MatchID AND kills>0 AND player NOT IN (SELECT player FROM killsbyplayer WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=@MatchID AND Deaths>0 AND player NOT IN (SELECT player FROM deathsbyplayer WHERE matchID=@MatchID);
+SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=@MatchID AND kills>0 AND player NOT IN (SELECT player FROM weaponkillsbyplayer WHERE matchID=@MatchID);
 
 
-SELECT * FROM playernicks
-SELECT * FROM playerstats where matchID=52 LIMIT 10
-
-SELECT distinct a.MatchID,a.Player,a.PlayerClanID,a.PlayerClanTag,d.Side,a.KillsByWeapons FROM playerstats a, gamematch b, weaponkillsbyplayer c, weapon d WHERE a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0;
-
-SELECT * FROM weaponkillsbyplayer a WHERE a.weapon  not IN (SELECT DISTINCT weapon FROM weapon);
-
-SELECT * from weaponkillsbyplayer where matchID IN (12,27,30,32)
-
-SELECT * FROM playerstats WHERE player='beipan'
-{"RuiXero": 1, "Mikebike": 2, "-X- Letal": 2, "-X- MaKana": 1, "[BxB] Junky\u2122": 1}
-SELECT * FROM killsbyplayer WHERE killer LIKE '[BxB] Junky%'
-
-SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=10)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=10),1,0) AS DiffKill_Deaths;
-SELECT b.ClanName,a.PlayerClanTag,a.PlayerClanID,a.* FROM playerstats a,clan b WHERE a.MatchID=10 AND a.PlayerClanID=b.ClanID
-SELECT * FROM playerstats WHERE MatchID=10
-
-SELECT * FROM playerstats WHERE player LIKE '%[%]%' AND PlayerClanID IS null
+#Comprobar para qué jugadores sus estadísticas de kills-muertes no coinciden
+SELECT a.MatchID,a.Player,a.SteamID,a.Kills,a.Deaths,a.TKs,
+case when b.KillsInKillsByPlayer IS NULL then 0 ELSE b.KillsInKillsByPlayer END AS KillsInKillsByPlayer,
+case when c.KillsIndeathsbyplayer IS NULL then 0 ELSE c.KillsIndeathsbyplayer END AS KillsIndeathsbyplayer,
+case when d.KillsInweaponkillsbyplayer IS NULL then 0 ELSE d.KillsInweaponkillsbyplayer END AS KillsInweaponkillsbyplayer,
+case when e.DeathsInweapondeathsbyplayer is null then 0 ELSE e.DeathsInweapondeathsbyplayer end AS DeathsInweapondeathsbyplayer,
+case when f.DeathsInKillsByPlayer IS NULL then 0 ELSE f.DeathsInKillsByPlayer END AS DeathsInKillsByPlayer,
+case when g.DeathsInDeathsByPlayer IS NULL then 0 ELSE g.DeathsInDeathsByPlayer END AS DeathsInDeathsByPlayer
+FROM playerstats a LEFT JOIN (SELECT SUM(x1.kills) AS KillsInKillsByPlayer,x1.Killer AS player,x1.MatchID FROM killsbyplayer x1 GROUP BY x1.Killer,x1.MatchID) b ON a.Player=b.player AND a.MatchID=b.MatchID
+LEFT JOIN (SELECT SUM(x2.deaths) killsIndeathsbyplayer,x2.Killer AS Player,x2.MatchID FROM deathsbyplayer x2 GROUP BY x2.Killer,x2.MatchID) c ON a.Player=c.player AND a.MatchID=c.MatchID 
+LEFT JOIN (SELECT SUM(x3.Kills) AS KillsInweaponkillsbyplayer,x3.Player,x3.MatchID FROM weaponkillsbyplayer x3 GROUP BY x3.Player,x3.MatchID) d ON a.Player=d.Player AND a.MatchID=d.MatchID
+LEFT JOIN (SELECT SUM(x4.Deaths) AS DeathsInweapondeathsbyplayer,x4.Player,x4.MatchID FROM weapondeathsbyplayer x4 GROUP BY x4.Player,x4.MatchID) e ON a.Player=e.Player AND a.MatchID=e.MatchID
+LEFT JOIN (SELECT SUM(x5.kills) AS DeathsInKillsByPlayer,x5.Victim AS player,x5.MatchID FROM killsbyplayer x5 GROUP BY x5.Victim,x5.MatchID) f ON a.Player=f.player AND a.MatchID=f.MatchID
+LEFT JOIN (SELECT SUM(x6.deaths) AS DeathsInDeathsByPlayer,x6.Victim AS player,x6.MatchID FROM deathsbyplayer x6 GROUP BY x6.Victim,x6.MatchID) g ON a.Player=g.player AND a.MatchID=g.MatchID
+WHERE a.MatchID=@MatchID AND (a.Kills<>KillsInKillsByPlayer OR a.Kills<>KillsIndeathsbyplayer OR a.Kills<>KillsInweaponkillsbyplayer OR a.Deaths<>DeathsInweapondeathsbyplayer)
 
 
-## Pruebas para módulo "Determinar y añadir matchsquads"
--- INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side)
-SET @newMatchID=10;
+#Jugadores sin SteamID
+SELECT * FROM playerstats a WHERE a.SteamID=0;
 
-#Determinar quienes han sido los comandantes
-SELECT DISTINCT @newMatchID,a.player,a.SteamID,c.category1,c.category1,c.category1,a.PlayerSide FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE 
-a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='Commander';
+#Jugadores sin bando
+SELECT * FROM playerstats a WHERE (a.PlayerSide is null OR a.PlayerSide NOT IN (0,1,2)) AND MatchID=@MatchID;
 
-#Blindados: regla # Tank = aquellos jugadores de la partida que hayan matado con armas de categoría1 Tank y esas kills sean >=20% de sus kills totales por jugador
-SET @vCategory1='Tank',@vFormacion='Armored';
-SET @weaponthreshold=0.20;
-SELECT DISTINCT @newMatchID,a.player,a.SteamID,@vFormacion,c.category1,c.category1,a.PlayerSide
-FROM playerstats a, weaponkillsbyplayer b, weapon c
-WHERE a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1=@vCategory1
-AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1=@vCategory1 GROUP BY a.Player HAVING (SUM(b.Kills)/a.Kills)>=@weaponthreshold);
+#Variaciones de nicks de jugadores
+SELECT  distinct a.SteamID,a.Player FROM playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<>b.Player ORDER BY a.SteamID
 
 
-#Artillería: regla # Artillery = aquellos jugadores de la partida que hayan matado con armas de categoría1 Artillery y esas kills sean >=30% de sus kills totales por jugador
-SET @vCategory1='Artillery',@vFormacion='Artillery';
-SELECT DISTINCT @newMatchID,a.player,a.SteamID,@vFormacion,c.category1,c.category1,a.PlayerSide
-FROM playerstats a, weaponkillsbyplayer b, weapon c
-WHERE a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1=@vCategory1
-AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1=@vCategory1 GROUP BY a.Player HAVING (SUM(b.Kills)/a.Kills)>=0.30);
+UPDATE playerstats a, gamematch b, deathsbyplayer c,playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2)
+WHERE a.Deaths>0 AND a.PlayerSide=0 AND a.MatchID=605 AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);
 
-SET @vCategory1='Recon',@vFormacion='Recon';
-SELECT DISTINCT @newMatchID,a.player,a.SteamID,@vFormacion,'Sniper',c.category1,a.PlayerSide
-FROM playerstats a, weaponkillsbyplayer b, weapon c
-WHERE a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1=@vCategory1
-AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE a.MatchID=@newMatchID AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1=@vCategory1 GROUP BY a.Player HAVING (SUM(b.Kills)/a.Kills)>=0.50);
+SELECT * FROM playerstats WHERE DWPlayerID='76561198188795134' AND MatchID=605
+SELECT * FROM playerstats WHERE Player='Cabo Ratatula' AND MatchID=605
 
-
-SET @newMatchID=76;
-SELECT * FROM matchsquads WHERE matchID=@newMatchID
-
-SELECT * FROM playerstats WHERE PlayerClanID IS NULL ORDER BY player
-
-SELECT * FROM weaponkillsbyplayer WHERE matchID=3 AND player LIKE '%EKOBER%' ORDER BY kills DESC
-
-SELECT PlayerSide,sum(kills),sum(deaths) FROM playerstats WHERE MatchID=4
-GROUP BY PlayerSide
-
-SELECT * FROM Playerstats WHERE PlayerSide IS NULL
-
-ilker.f.sen
--L- [H9H] Alfrid
-
-SELECT a.Player,1 AS PlayerSideA from playerstats a, weapondeathsbyplayer b, weapon c WHERE a.MatchID=4 AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2;
-SELECT a.Player,1 AS PlayerSideA from playerstats a, weapondeathsbyplayer b, weapon c WHERE a.MatchID=4 AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon;
-
-SELECT * FROM playerstats WHERE matchID=4 AND player='-L- [H9H] Alfrid'
-SELECT * FROM weapondeathsbyplayer WHERE matchID=4 AND player='-L- [H9H] Alfrid'
-
--- UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide=1 WHERE a.MatchID=4 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side=2 AND a.PlayerSide IS null;
-
-SELECT sum(Kills) FROM playerstats p WHERE p.MatchID=4 AND p.PlayerSide=1
-SELECT sum(Deaths) FROM playerstats p WHERE p.MatchID=4 AND p.PlayerSide=2
-
-SELECT sum(b.Kills) FROM playerstats a, killsbyplayer b WHERE a.MatchID=4 AND a.PlayerSide=2 AND a.MatchID=b.MatchID AND a.Player=b.Victim;
-
-SELECT * FROM playerstats x WHERE x.MatchID=4 AND x.Player IN (SELECT b.Killer FROM playerstats a, killsbyplayer b WHERE a.MatchID=4 AND a.PlayerSide=2 AND a.MatchID=b.MatchID AND a.Player=b.Victim);
-
-SELECT x.playerside,x.* FROM playerstats x WHERE x.MatchID=4 AND x.Player in
-(SELECT victim FROM killsbyplayer  WHERE MatchID=4 AND killer='-x- cheK')
-
-
-
-
-SELECT d.Side,a.Player,a.KillsByWeapons from playerstats a, gamematch b, weaponkillsbyplayer c, weapon d WHERE a.MatchID=4 AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and
-c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x WHERE a.Player=x.Player AND a.MatchID=x.MatchID);
+SELECT 1+(3 MOD 2)

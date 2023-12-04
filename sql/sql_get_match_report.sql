@@ -4,7 +4,7 @@
 
 SET collation_connection = @@collation_database;
 
-#Match ID to get report€
+#Match ID to get report
 SET @MatchID=6;
 
 ################################################################################################################################################################
