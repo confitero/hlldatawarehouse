@@ -183,7 +183,7 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
     """
     
     try:        
-        strsql=f"UPDATE playerstats a, gamematch b, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
+        strsql=f"UPDATE playerstats a, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
         dbcursor.execute(strsql)
 
         # strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0;"
@@ -192,7 +192,7 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
         strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.deaths) FROM weapondeathsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
         dbcursor.execute(strsql)
 
-        strsql=f"UPDATE playerstats a, gamematch b, deathsbyplayer c,playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2) WHERE a.Deaths>0 AND a.PlayerSide is null AND a.MatchID={MatchDbID} AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);"
+        strsql=f"UPDATE playerstats a, deathsbyplayer c, playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2) WHERE a.Deaths>0 AND a.PlayerSide is null AND a.MatchID={MatchDbID} AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 AND d.PlayerSide is not NULL and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);"
         dbcursor.execute(strsql)
 
         return 0
@@ -215,11 +215,11 @@ def sqlFillMatchRolesAux (MatchDbID,squadRole,weaponCategory1,weaponthreshold,pl
     """
 
     strsql=f"INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) \
-            SELECT DISTINCT {MatchDbID},a.player,a.SteamID,'{squadRole}','{playerRole}',c.category1,a.PlayerSide \
-            FROM playerstats a, weaponkillsbyplayer b, weapon c \
-            WHERE a.MatchID={MatchDbID} AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='{weaponCategory1}' \
-            AND a.Kills>0 AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE a.MatchID={MatchDbID} AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='{weaponCategory1}' GROUP BY a.Player HAVING (SUM(b.Kills)/a.Kills)>={weaponthreshold});"
+            SELECT 1,a.Player,a.SteamID,'{squadRole}','{playerRole}','{weaponCategory1}',a.PlayerSide FROM playerstats a, weaponkillsbyplayer b, weapon c \
+            WHERE a.MatchID={MatchDbID} AND a.player=b.player AND b.MatchID={MatchDbID} AND b.Weapon=c.Weapon AND c.category1='{weaponCategory1}' \
+            GROUP BY a.Player,a.SteamID,'{squadRole}','{playerRole}','{weaponCategory1}',a.PlayerSide HAVING ((SUM(b.Kills)/sum(a.Kills))>={weaponthreshold});"
     return strsql
+
 
 def sqlFillMatchRoles (dbcursor,MatchDbID):
     """Fill table matchsquads based on match kills weapons used by player. Incoherences may be generated for players changing side in the same match.
@@ -383,7 +383,7 @@ def sqlPreCheckNumPlayers(dbcursor):
 
 def sqlCheckMatchNumPlayers(dbcursor,MatchDbID):
 
-    strsql=f"SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID={MatchDbID} AND SteamID NOT IN (SELECT DISTINCT SteamID FROM player);"
+    strsql=f"SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID={MatchDbID} AND NOT EXISTS (SELECT 1 FROM player WHERE player.SteamID=playerstats.SteamID);"
     try:
         if dbcursor.execute(strsql):
             NumPlayers=dbcursor.fetchone()[0]
@@ -445,7 +445,7 @@ def sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID):
     strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM weaponkillsbyplayer WHERE matchID={MatchDbID});"
     sqlCheckConsistency(strsql,dbcursor,"Warning12: checking consistency players in playerstats-weaponkillsbyplayer for match = " + str(MatchDbID))
 
-    strsql=f"SELECT count(*) FROM playerstats WHERE SteamID=0 AND matchID={MatchDbID};"
+    strsql=f"SELECT count(*) FROM playerstats WHERE SteamID='0' AND matchID={MatchDbID};"
     sqlCheckConsistency(strsql,dbcursor,"Warning13: checking playerstat, found players with steamID=0 for match = " + str(MatchDbID))
 
     # Disabled to avoid Warning:s when loading old matches that don't have JSON weapondeathsbyplayer field

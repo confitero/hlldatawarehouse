@@ -145,7 +145,7 @@ INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Mo
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (60,'M2 Browning [M3 Half-track]','Infantry','Vehicle','Mounted MG','Allies','All','Half-track');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (61,'MG 42 [Sd.Kfz 251 Half-track]','Infantry','Vehicle','Mounted MG','Axis','Germany','Half-track');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (62,'Roadkill','Infantry','Vehicle','Vehicle run over','All','All','');
-INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (63,'Jeep Willys','Infantry','Vehicle','Vehicle run over','Allies','USA','Jeep');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (63,'Jeep Willys','Infantry','Vehicle','Vehicle run over','Allies','All','Jeep');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (64,'GMC CCKW 353 (Supply)','Infantry','Vehicle','Vehicle run over','Allies','USA','');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (65,'GMC CCKW 353 (Transport)','Infantry','Vehicle','Vehicle run over','Allies','USA','');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (66,'Sd.Kfz 251 Half-track','Infantry','Vehicle','Vehicle run over','Axis','Germany','Half-track');
@@ -247,6 +247,44 @@ INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Mo
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (162,'COAXIAL BESA [Daimler]','Tank','Recon tank','Tank MG','Allies','GB','Daimler');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (163,'QF 2-POUNDER [Daimler]','Tank','Recon tank','Tank cannon','Allies','GB','Daimler');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (164,'Boys Anti-tank Rifle','Infantry','AT','AT riffle','Allies','GB','');
+
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (165,'Fairbairn–Sykes','Infantry','Melee','Melee','Allies','GB','');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (166,'M1928A1 THOMPSON','Infantry','Firearm','Automatic','Allies','GB','');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (167,'SMLE No.1 Mk III','Infantry','Firearm','Bolt','Allies','GB','');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (168,'Lee–Enfield No.4 Mk I','Infantry','Firearm','Bolt','Allies','GB','');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (169,'Lee–Enfield Jungle Carbine','Infantry','Firearm','Bolt','Allies','GB','');
+
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (170,'Tetrarch','Tank','Light tank','Vehicle run over','Allies','GB','Tetrarch');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (171,'Daimler','Tank','Recon tank','Vehicle run over','Allies','GB','Daimler');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (172,'Firefly','Tank','Vehicle','Heavy tank run over','Allies','GB','Firefly');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (173,'Churchill Mk.III','Tank','Heavy tank','Vehicle run over','Allies','GB','Churchill Mk.III');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (174,'Bedford OYD (Transport)','Infantry','Vehicle','Vehicle run over','Allies','GB','Bedford OYD (Transport)');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (175,'HULL BESA 7.92mm [Churchill Mk.III]','Tank','Heavy tank','Tank MG','Allies','GB','Churchill Mk.III');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (176,'COAXIAL BESA 7.92mm [Churchill Mk.III]','Tank','Heavy tank','Tank MG','Allies','GB','Churchill Mk.III');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (177,'OQF 6 - POUNDER Mk.V [Churchill Mk.III]','Tank','Heavy tank','Tank cannon','Allies','GB','Churchill Mk.III');
+
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (178,'No.2 Mk 5 Flare Pistol','Recon','Equipment','FlareGun','Allies','GB','');
+
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (179,'FireSpot','Infantry','Unknown','Unknown','All','All','');
+
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (180,'HULL BESA','Tank','Medium tank','Tank MG','Allies','GB','Cromwell');
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (181,'HULL DT','Tank','Recon tank','Tank MG','Allies','Soviet','BA-10');
+
+x'M1928A1 THOMPSON'
+x'SMLE No.1 Mk III'
+x'Lee–Enfield No.4 Mk I'
+x'Lee–Enfield Jungle Carbine'
+x 'Fairbairn–Sykes'
+x'Tetrarch'
+x'Daimler'
+x'Firefly'
+x'Churchill Mk.III'
+x'Bedford OYD (Transport)'
+x'HULL DT' >> https://server.comunidadhll.es:3443/#/gamescoreboard/1525071
+x'HULL BESA' >> https://server.comunidadhll.es:3443/#/gamescoreboard/1525120
+x'No.2 Mk 5 Flare Pistol'
+
+
 
 UPDATE weapon SET WeaponFull=weapon WHERE WeaponFull IS NULL;
 UPDATE Weapon SET WeaponFull='122MM HOWITZER [M1938 (M-30)] Soviet' WHERE weaponid=4;

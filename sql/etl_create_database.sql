@@ -9,7 +9,7 @@ SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
-
+-- SET DESIRED SCHEMA NAME (default = hlldw)
 SET @schemaName='hlldw';
 
 -- -----------------------------------------------------
@@ -22,6 +22,10 @@ EXECUTE S1;
 SET @strSQL=CONCAT('USE ',@schemaName);
 PREPARE S1 FROM @strSQL;
 EXECUTE S1;
+
+-- ****************************************************************************************************************************************************************************
+-- STATIC DATA TABLES
+
 
 -- -----------------------------------------------------
 -- Table `Map`
@@ -46,6 +50,18 @@ CREATE TABLE IF NOT EXISTS `MatchType` (
 ENGINE = InnoDB
 
 -- -----------------------------------------------------
+-- Table `Community`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Community` (
+  `CMID` INT NOT NULL COMMENT 'Game Community internal database ID',
+  `CommunityName` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`CMID`),
+  UNIQUE INDEX `CMID_UNIQUE` (`CMID` ASC) VISIBLE,
+  UNIQUE INDEX `CommunityName_UNIQUE` (`CommunityName` ASC) VISIBLE)
+ENGINE = INNODB;
+
+
+-- -----------------------------------------------------
 -- Table `Competition`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Competition` (
@@ -55,6 +71,54 @@ CREATE TABLE IF NOT EXISTS `Competition` (
   PRIMARY KEY (`CompetitionID`))
 ENGINE = InnoDB;
 
+
+-- -----------------------------------------------------
+-- Table `Clan`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Clan` (
+  `ClanID` SMALLINT UNSIGNED NOT NULL,
+  `ClanName` VARCHAR(100) NOT NULL,
+  `Country` VARCHAR(50) NULL,
+  `LastHeloRank` SMALLINT UNSIGNED NULL,
+  `ClanAcro` VARCHAR(20) NOT NULL,
+  PRIMARY KEY (`ClanID`))
+ENGINE = InnoDB;
+
+-- -----------------------------------------------------
+-- Table `ClanTag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ClanTag` (
+  `ClanTag` VARCHAR(15) NOT NULL COMMENT 'Clan tag must be unique. If collision between two or more clans, use aditional prefix/sufix to made unique (country, region, continent, etc)',
+  `ClanID` SMALLINT UNSIGNED NOT NULL,
+  PRIMARY KEY (`ClanTag`),
+  INDEX `fkClanTag_Clan_ClanID_idx` (`ClanID` ASC),
+  CONSTRAINT `fkClanTag_Clan_ClanID`
+    FOREIGN KEY (`ClanID`)
+    REFERENCES `Clan` (`ClanID`)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT)
+ENGINE = InnoDB;
+
+-- -----------------------------------------------------
+-- Table `Weapon`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Weapon` (
+  `WeaponID` INT UNSIGNED NOT NULL,
+  `Weapon` VARCHAR(500) NULL,
+  `Category1` VARCHAR(50) NOT NULL,
+  `Category2` VARCHAR(50) NOT NULL,
+  `Category3` VARCHAR(50) NOT NULL,
+  `Side1` VARCHAR(50) NOT NULL,
+  `Side2` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin' NOT NULL,
+  `Model` VARCHAR(50) NULL,
+  `WeaponFull` VARCHAR(80) NULL,
+  `Side` TINYINT NULL,
+  PRIMARY KEY (`WeaponID`),
+  UNIQUE INDEX `Weapon_UNIQUE` (`Weapon` ASC))
+ENGINE = InnoDB;
+
+-- ****************************************************************************************************************************************************************************
+-- VAR DATA TABLES
 
 -- -----------------------------------------------------
 -- Table `GameMatch`
@@ -97,18 +161,7 @@ CREATE TABLE IF NOT EXISTS `GameMatch` (
     ON UPDATE RESTRICT)
 ENGINE = INNODB;
 
-
--- -----------------------------------------------------
--- Table `Clan`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `Clan` (
-  `ClanID` SMALLINT UNSIGNED NOT NULL,
-  `ClanName` VARCHAR(100) NOT NULL,
-  `Country` VARCHAR(50) NULL,
-  `LastHeloRank` SMALLINT UNSIGNED NULL,
-  `ClanAcro` VARCHAR(20) NOT NULL,
-  PRIMARY KEY (`ClanID`))
-ENGINE = InnoDB;
+create INDEX `ix_gamematch_sqlInsertMatch` USING HASH ON `GameMatch` (`CMID`,`RCONMatchID`,`StartTime`,`EndTime`);
 
 
 -- -----------------------------------------------------
@@ -146,18 +199,7 @@ CREATE TABLE `player` (
 COLLATE='utf8mb4_unicode_ci'
 ENGINE=InnoDB;
 
-
--- -----------------------------------------------------
--- Table `Community`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `Community` (
-  `CMID` INT NOT NULL COMMENT 'Game Community internal database ID',
-  `CommunityName` VARCHAR(50) NOT NULL,
-  PRIMARY KEY (`CMID`),
-  UNIQUE INDEX `CMID_UNIQUE` (`CMID` ASC) VISIBLE,
-  UNIQUE INDEX `CommunityName_UNIQUE` (`CommunityName` ASC) VISIBLE)
-ENGINE = INNODB;
-
+create INDEX `ix_Player_SteamID` USING HASH ON `player` (`SteamID`);
 
 -- -----------------------------------------------------
 -- Table `PlayerStats`
@@ -214,6 +256,11 @@ CREATE TABLE IF NOT EXISTS `PlayerStats` (
     ON UPDATE NO ACTION)
 ENGINE = INNODB;
 
+create INDEX `ix_PlayerStats_1` USING HASH ON `PlayerStats` (`MatchID`,`Player`,`PlayerSide`,`Deaths`);
+create INDEX `ix_PlayerStats_2` USING HASH ON `PlayerStats` (`MatchID`,`Player`,`SteamID`,`PlayerSide`);
+create INDEX `ix_PlayerStats_3` USING BTREE ON `PlayerStats` (`MatchID`,`Player`,`Kills`);
+create INDEX `ix_PlayerStats_4` USING BTREE ON `PlayerStats` (`MatchID`,`Player`,`Deaths`);
+create INDEX `ix_PlayerStats_5` USING HASH ON `PlayerStats` (`MatchID`,`SteamID`);
 
 -- -----------------------------------------------------
 -- Table `KillsByPlayer`
@@ -231,6 +278,11 @@ CREATE TABLE IF NOT EXISTS `KillsByPlayer` (
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
+create INDEX `ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency` USING HASH ON `KillsByPlayer` (`MatchID`);
+-- BTree TYPE because of terms max(Kills) that requires order of rows
+create INDEX `ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2` USING BTREE ON `KillsByPlayer` (`MatchID`,`Kills`);
+create INDEX `ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3` USING HASH ON `KillsByPlayer` (`MatchID`,`Killer`);
+create INDEX `ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_4` USING HASH ON `KillsByPlayer` (`MatchID`,`Victim`);
 
 -- -----------------------------------------------------
 -- Table `DeathsByPlayer`
@@ -247,6 +299,14 @@ CREATE TABLE IF NOT EXISTS `DeathsByPlayer` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
+
+-- BTree TYPE because of terms max(Deaths) that requires order of rows
+create INDEX `ix_DeathsByPlayer_sqlFillPlayerMatchSide` USING BTREE ON `DeathsByPlayer` (`MatchID`,`Victim`,`Killer`,`Deaths`);
+create INDEX `ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency` USING HASH ON `DeathsByPlayer` (`MatchID`);
+-- BTree TYPE because of terms max(Deaths) that requires order of rows
+create INDEX `ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2` USING BTREE ON `DeathsByPlayer` (`MatchID`,`Deaths`);
+create INDEX `ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3` USING HASH ON `DeathsByPlayer` (`MatchID`,`Killer`);
+create INDEX `ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_4` USING HASH ON `DeathsByPlayer` (`MatchID`,`Victim`);
 
 
 -- -----------------------------------------------------
@@ -265,22 +325,10 @@ CREATE TABLE IF NOT EXISTS `WeaponKillsByPlayer` (
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
 
-
--- -----------------------------------------------------
--- Table `ClanTag`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `ClanTag` (
-  `ClanTag` VARCHAR(15) NOT NULL COMMENT 'Clan tag must be unique. If collision between two or more clans, use aditional prefix/sufix to made unique (country, region, continent, etc)',
-  `ClanID` SMALLINT UNSIGNED NOT NULL,
-  PRIMARY KEY (`ClanTag`),
-  INDEX `fkClanTag_Clan_ClanID_idx` (`ClanID` ASC),
-  CONSTRAINT `fkClanTag_Clan_ClanID`
-    FOREIGN KEY (`ClanID`)
-    REFERENCES `Clan` (`ClanID`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT)
-ENGINE = InnoDB;
-
+-- BTree TYPE because of terms max(Kills) that requires order of rows
+create INDEX `ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons` USING BTREE ON `WeaponKillsByPlayer` (`MatchID`,`Weapon`,`Player`,`Kills`);
+create INDEX `ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency` USING HASH ON `WeaponKillsByPlayer` (`MatchID`);
+create INDEX `ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2` USING HASH ON `WeaponKillsByPlayer` (`MatchID`,`Player`);
 
 -- -----------------------------------------------------
 -- Table `PlayerNicks`
@@ -291,26 +339,6 @@ CREATE TABLE IF NOT EXISTS `PlayerNicks` (
   `MainNick` BIT(1) NULL COMMENT '1 = main nick / 0 = secondary nick used in some matches',
   PRIMARY KEY (`SteamID`, `PlayerNick`))
 ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `Weapon`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `Weapon` (
-  `WeaponID` INT UNSIGNED NOT NULL,
-  `Weapon` VARCHAR(500) NULL,
-  `Category1` VARCHAR(50) NOT NULL,
-  `Category2` VARCHAR(50) NOT NULL,
-  `Category3` VARCHAR(50) NOT NULL,
-  `Side1` VARCHAR(50) NOT NULL,
-  `Side2` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin' NOT NULL,
-  `Model` VARCHAR(50) NULL,
-  `WeaponFull` VARCHAR(80) NULL,
-  `Side` TINYINT NULL,
-  PRIMARY KEY (`WeaponID`),
-  UNIQUE INDEX `Weapon_UNIQUE` (`Weapon` ASC))
-ENGINE = InnoDB;
-
 
 -- -----------------------------------------------------
 -- Table `MatchSquads`
@@ -333,7 +361,7 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `PlayerHits`
+-- Table `PlayerHits` >>>>>>>> reserved for future use in logs analyzer
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `PlayerHits` (
   `MatchID` INT UNSIGNED NOT NULL,
@@ -368,7 +396,12 @@ CREATE TABLE IF NOT EXISTS `WeaponDeathsByPlayer` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+-- BTree TYPE because of terms max(Deaths) that requires order of rows
+create INDEX `ix_WeaponDeathsByPlayer_1` USING BTREE ON `WeaponDeathsByPlayer` (`MatchID`,`Weapon`,`Player`,`Deaths`);
 
+-- -----------------------------------------------------
+-- Table `MatchStreamers`
+-- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `MatchStreamers` (
   `MatchID` INT UNSIGNED NOT NULL,
   `SteamID` VARCHAR(30) NOT NULL,

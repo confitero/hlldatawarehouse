@@ -63,7 +63,213 @@ SELECT  distinct a.SteamID,a.Player FROM playerstats a, playerstats b WHERE a.St
 UPDATE playerstats a, gamematch b, deathsbyplayer c,playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2)
 WHERE a.Deaths>0 AND a.PlayerSide=0 AND a.MatchID=605 AND a.MatchID=b.MatchID AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);
 
-SELECT * FROM playerstats WHERE DWPlayerID='76561198188795134' AND MatchID=605
+SELECT * FROM playerstats WHERE DWPlayerID='76561198188795134' AND MatchID=607
 SELECT * FROM playerstats WHERE Player='Cabo Ratatula' AND MatchID=605
+SELECT * FROM playerstats WHERE Deaths=0 AND Kills=0 AND MatchID=607
 
 SELECT 1+(3 MOD 2)
+SELECT 1 FROM DUAL WHERE NOT(1=NULL)
+SELECT 1 FROM DUAL WHERE 1=NULL
+SELECT 1 FROM DUAL WHERE 1<>NULL
+SELECT @@optimizer_switch
+
+# OPTIMIZACIÓN con ÍNDICES
+#sqlInsertMatch
+EXPLAIN SELECT 1 from gamematch where CMID=1 AND RCONMatchID=1526453
+EXPLAIN SELECT matchID from gamematch where CMID=1 AND RCONMatchID=1526453 AND StartTime='2023-10-28 18:02:04.000' AND EndTime='2023-10-28 18:30:21.000'
+
+#sqlCheckNotRegisteredWeapons
+EXPLAIN SELECT DISTINCT Weapon FROM weaponkillsbyplayer a WHERE a.matchID=1526453 AND a.weapon NOT IN (SELECT DISTINCT weapon FROM weapon);
+
+#sqlCheckOrInsertPlayer
+EXPLAIN SELECT 1 from Player where DWPlayerID='76561199150860232'
+
+#sqlFillPlayerClanAndTAG
+EXPLAIN UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where locate(y.clantag,x.Player)>0 AND x.MatchID=1;
+
+#sqlFillPlayerMatchSide
+EXPLAIN UPDATE playerstats a, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID=1 AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0); 
+EXPLAIN UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID=1 AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.deaths) FROM weapondeathsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);
+EXPLAIN UPDATE playerstats a, deathsbyplayer c, playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2) WHERE a.Deaths>0 AND a.PlayerSide is null AND a.MatchID=1 AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 AND d.PlayerSide is not NULL and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);
+
+id|select_type       |table|type|possible_keys                                 |key                   |key_len|ref                       |rows|Extra                   |
+--+------------------+-----+----+----------------------------------------------+----------------------+-------+--------------------------+----+------------------------+
+ 1|PRIMARY           |c    |ref |fkDeaths_GameMatch_idx                        |fkDeaths_GameMatch_idx|4      |const                     |448 |                        |
+ 1|PRIMARY           |a    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1|ix_PlayerStats_1      |208    |const,hlldw.c.Victim,const|1   |Using where             |
+ 1|PRIMARY           |d    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1|ix_PlayerStats_1      |206    |const,hlldw.c.Killer      |1   |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|y    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1|ix_PlayerStats_1      |4      |hlldw.a.MatchID           |1   |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|x    |ref |fkDeaths_GameMatch_idx                        |fkDeaths_GameMatch_idx|4      |hlldw.a.MatchID           |313 |Using where             |
+ 
+ id|select_type       |table|type|possible_keys                                                  |key                                     |key_len|ref                                          |rows|Extra                   |
+--+------------------+-----+----+---------------------------------------------------------------+----------------------------------------+-------+---------------------------------------------+----+------------------------+
+ 1|PRIMARY           |a    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1,ix_PlayerStats_2|fkPlayerResults_GameMatch_idx           |4      |const                                        |78  |Using where             |
+ 1|PRIMARY           |c    |ref |fkDeaths_GameMatch_idx,ix_DeathsByPlayer_sqlFillPlayerMatchSide|ix_DeathsByPlayer_sqlFillPlayerMatchSide|206    |const,hlldw.a.Player                         |1   |Using where; Using index|
+ 1|PRIMARY           |d    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1,ix_PlayerStats_2|ix_PlayerStats_1                        |206    |const,hlldw.c.Killer                         |1   |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|y    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1,ix_PlayerStats_2|ix_PlayerStats_1                        |4      |hlldw.a.MatchID                              |1   |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|x    |ref |fkDeaths_GameMatch_idx,ix_DeathsByPlayer_sqlFillPlayerMatchSide|ix_DeathsByPlayer_sqlFillPlayerMatchSide|408    |hlldw.a.MatchID,hlldw.a.Player,hlldw.y.Player|1   |Using where; Using index|
+ 
+#sqlFillMatchRolesAux 
+EXPLAIN INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) SELECT DISTINCT 1,a.player,a.SteamID,'Armored','Tank-crew',c.category1,a.PlayerSide FROM
+	playerstats a, weaponkillsbyplayer b, weapon c WHERE
+	a.MatchID=1 AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND c.category1='Tank' AND
+	a.Kills>0 AND a.Player IN (SELECT a.Player FROM playerstats a, weaponkillsbyplayer b, weapon c WHERE a.MatchID=1 AND a.player=b.player AND a.MatchID=b.MatchID AND b.Weapon=c.Weapon AND
+	c.category1='Tank' GROUP BY a.Player HAVING (SUM(b.Kills)/a.Kills)>=0.20);
+	
+
+id|select_type       |table|type  |possible_keys                                                                  |key                                                |key_len|ref           |rows|Extra                       |
+--+------------------+-----+------+-------------------------------------------------------------------------------+---------------------------------------------------+-------+--------------+----+----------------------------+
+ 1|PRIMARY           |a    |ref   |fkPlayerResults_GameMatch_idx,ix_PlayerStats_1                                 |fkPlayerResults_GameMatch_idx                      |4      |const         |78  |Using where; Using temporary|
+ 1|PRIMARY           |b    |ref   |fkWeapinKills_GameMatch_idx,ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons|ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons|4      |const         |1   |Using where; Using index    |
+ 1|PRIMARY           |c    |eq_ref|Weapon_UNIQUE                                                                  |Weapon_UNIQUE                                      |2003   |hlldw.b.Weapon|1   |Using where                 |
+ 2|DEPENDENT SUBQUERY|a    |range |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_1 |ix_PlayerStats_1                                   |4      |              |78  |Using where; Using index    |
+ 2|DEPENDENT SUBQUERY|b    |ref   |fkWeapinKills_GameMatch_idx,ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons|ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons|4      |const         |1   |Using where; Using index    |
+ 2|DEPENDENT SUBQUERY|c    |eq_ref|Weapon_UNIQUE                                                                  |Weapon_UNIQUE                                      |2003   |hlldw.b.Weapon|1   |Using where                 |
+ 
+ #sqlFillMatchRolesAux 
+EXPLAIN INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side)
+	SELECT DISTINCT 1,a.player,a.SteamID,'Armored','Tank-crew','Tank',a.PlayerSide FROM
+	playerstats a  WHERE
+	a.MatchID=1 AND a.Player IN (SELECT x.Player FROM playerstats x, weaponkillsbyplayer y, weapon z WHERE x.MatchID=1 AND x.player=y.player AND y.MatchID=1 AND y.Weapon=z.Weapon AND
+	z.category1='Tank' GROUP BY x.Player HAVING (SUM(y.Kills)/sum(x.Kills))>=0.20);
+
+1|player              |SteamID          |Armored|Tank-crew|category1|PlayerSide|
+-+--------------------+-----------------+-------+---------+---------+----------+
+1|-L- [250H] Barba Neg|76561198887897325|Armored|Tank-crew|Tank     |         1|
+1|-L- [HFL] Xhien Omur|76561198148883890|Armored|Tank-crew|Tank     |         1|
+1|-L-[250H]Ruso       |76561198220519063|Armored|Tank-crew|Tank     |         1|
+1|-X- migs            |76561199088937259|Armored|Tank-crew|Tank     |         2|
+1|-X-[H9H] Hans       |76561198144421884|Armored|Tank-crew|Tank     |         2|
+1|-X-danitofgi        |76561198845849886|Armored|Tank-crew|Tank     |         2|
+1|-X-JUPACAROS        |76561198357981636|Armored|Tank-crew|Tank     |         2|
+
+ #sqlFillMatchRolesAux 
+EXPLAIN INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side)
+	SELECT 1,x.Player,x.SteamID,'Armored','Tank-crew','Tank',x.PlayerSide FROM playerstats x, weaponkillsbyplayer y, weapon z WHERE x.MatchID=1 AND x.player=y.player AND y.MatchID=1 AND y.Weapon=z.Weapon AND
+	z.category1='Tank'
+	GROUP BY 1,x.Player,x.SteamID,'Armored','Tank-crew','Tank',x.PlayerSide HAVING (SUM(y.Kills)/sum(x.Kills))>=0.20
+
+#sqlFillMatchRoles
+EXPLAIN INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side)
+	SELECT DISTINCT 1,a.player,a.SteamID,'Infantry','Infantry','Infantry',a.PlayerSide FROM playerstats a
+	WHERE a.MatchID=1 AND a.Player not IN (SELECT DISTINCT x.Player FROM matchsquads x WHERE x.MatchID=1)
+	
+id|select_type |table|type|possible_keys                                                  |key                                 |key_len|ref  |rows|Extra                                    |
+--+------------+-----+----+---------------------------------------------------------------+------------------------------------+-------+-----+----+-----------------------------------------+
+ 1|PRIMARY     |a    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1|ix_PlayerStats_2                    |4      |const|78  |Using where; Using index; Using temporary|
+ 2|MATERIALIZED|x    |ref |fk_MatchSquads_GameMatch_MatchID_idx                           |fk_MatchSquads_GameMatch_MatchID_idx|4      |const|78  |                                         |
+ 
+EXPLAIN INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side)
+	SELECT DISTINCT 1,a.player,a.SteamID,'Infantry','Infantry','Infantry',a.PlayerSide FROM playerstats a
+	WHERE a.MatchID=1 AND NOT EXISTS (SELECT 1 FROM matchsquads x WHERE x.MatchID=1 AND x.Player=a.Player)
+
+id|select_type       |table|type|possible_keys                                                  |key                                 |key_len|ref  |rows|Extra                                    |
+--+------------------+-----+----+---------------------------------------------------------------+------------------------------------+-------+-----+----+-----------------------------------------+
+ 1|PRIMARY           |a    |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1|ix_PlayerStats_2                    |4      |const|78  |Using where; Using index; Using temporary|
+ 2|DEPENDENT SUBQUERY|x    |ref |fk_MatchSquads_GameMatch_MatchID_idx                           |fk_MatchSquads_GameMatch_MatchID_idx|4      |const|78  |Using where                              |
+ 
+ #sqlCheckMatchNumPlayers
+EXPLAIN SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID=1 AND SteamID NOT IN (SELECT DISTINCT SteamID FROM player);
+
+id|select_type |table      |type|possible_keys                                                  |key             |key_len|ref  |rows|Extra                   |
+--+------------+-----------+----+---------------------------------------------------------------+----------------+-------+-----+----+------------------------+
+ 1|PRIMARY     |playerstats|ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1|ix_PlayerStats_2|4      |const|78  |Using where; Using index|
+ 2|MATERIALIZED|player     |ALL |                                                               |                |       |     |390 |                        |
+ 
+ id|select_type       |table      |type          |possible_keys                                                  |key              |key_len|ref  |rows|Extra                                          |
+--+------------------+-----------+--------------+---------------------------------------------------------------+-----------------+-------+-----+----+-----------------------------------------------+
+ 1|PRIMARY           |playerstats|ref           |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1|ix_PlayerStats_2 |4      |const|78  |Using where; Using index                       |
+ 2|DEPENDENT SUBQUERY|player     |index_subquery|ix_Player_SteamID                                              |ix_Player_SteamID|122    |func |1   |Using index; Using where; Full scan on NULL key|
+ 
+ EXPLAIN SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID=1 AND NOT EXISTS (SELECT 1 FROM player WHERE player.SteamID=playerstats.SteamID);
+ 
+id|select_type       |table      |type          |possible_keys                                                  |key              |key_len|ref  |rows|Extra                   |
+--+------------------+-----------+--------------+---------------------------------------------------------------+-----------------+-------+-----+----+------------------------+
+ 1|PRIMARY           |playerstats|ref           |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1|ix_PlayerStats_2 |4      |const|78  |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|player     |index_subquery|ix_Player_SteamID                                              |ix_Player_SteamID|122    |func |1   |Using index             |
+ 
+# sqlCheckKillsAndDeathsSumConsistency
+EXPLAIN SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=1)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=1),1,0) AS DiffKill_Deaths;
+ 
+id|select_type|table         |type|possible_keys                                                  |key                                     |key_len|ref  |rows|Extra         |
+--+-----------+--------------+----+---------------------------------------------------------------+----------------------------------------+-------+-----+----+--------------+
+ 1|PRIMARY    |              |    |                                                               |                                        |       |     |    |No tables used|
+ 3|SUBQUERY   |deathsbyplayer|ref |fkDeaths_GameMatch_idx,ix_DeathsByPlayer_sqlFillPlayerMatchSide|ix_DeathsByPlayer_sqlFillPlayerMatchSide|4      |const|448 |Using index   |
+ 2|SUBQUERY   |killsbyplayer |ref |fkKills_GameMatch_idx                                          |fkKills_GameMatch_idx                   |4      |const|456 |              |
+ 
+EXPLAIN SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=1)<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID=1),1,0) AS DiffKill_Kills;
+
+id|select_type|table              |type|possible_keys                                                                                                                      |key                                                    |key_len|ref  |rows|Extra         |
+--+-----------+-------------------+----+-----------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------+-------+-----+----+--------------+
+ 1|PRIMARY    |                   |    |                                                                                                                                   |                                                       |       |     |    |No tables used|
+ 3|SUBQUERY   |weaponkillsbyplayer|ref |fkWeapinKills_GameMatch_idx,ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons                                                    |ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons    |4      |const|117 |Using index   |
+ 2|SUBQUERY   |killsbyplayer      |ref |fkKills_GameMatch_idx,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2|ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2|4      |const|456 |Using index   |
+ 
+EXPLAIN SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=1 AND killer NOT IN (SELECT player FROM playerstats WHERE matchID=1);
+
+id|select_type |table        |type|possible_keys                                                                                                                      |key                          |key_len|ref  |rows|Extra      |
+--+------------+-------------+----+-----------------------------------------------------------------------------------------------------------------------------------+-----------------------------+-------+-----+----+-----------+
+ 1|PRIMARY     |killsbyplayer|ref |fkKills_GameMatch_idx,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2|fkKills_GameMatch_idx        |4      |const|456 |Using where|
+ 2|MATERIALIZED|playerstats  |ref |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_2,ix_PlayerStats_1                                    |fkPlayerResults_GameMatch_idx|4      |const|78  |Using index|
+ 
+ id|select_type |table        |type|possible_keys                                                                                                                                                                              |key                                                    |key_len|ref  |rows|Extra                   |
+--+------------+-------------+----+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------+-------+-----+----+------------------------+
+ 1|PRIMARY     |killsbyplayer|ref |fkKills_GameMatch_idx,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3|ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3|4      |const|456 |Using where; Using index|
+ 2|MATERIALIZED|playerstats  |ref |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_2,ix_PlayerStats_1                                                                                            |fkPlayerResults_GameMatch_idx                          |4      |const|78  |Using index             |
+ 
+ EXPLAIN SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=1 AND NOT EXISTS (SELECT 1 FROM playerstats WHERE playerstats.matchID=1 AND playerstats.player=killsbyplayer.killer);
+ 
+id|select_type |table        |type|possible_keys                                                                                                                                                                              |key                                                    |key_len|ref  |rows|Extra                   |
+--+------------+-------------+----+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------+-------+-----+----+------------------------+
+ 1|PRIMARY     |killsbyplayer|ref |fkKills_GameMatch_idx,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3|ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3|4      |const|456 |Using where; Using index|
+ 2|MATERIALIZED|playerstats  |ref |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_2,ix_PlayerStats_1                                                                                            |fkPlayerResults_GameMatch_idx                          |4      |const|78  |Using index             |
+ 
+ 
+EXPLAIN SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=1 AND victim NOT IN (SELECT player FROM playerstats WHERE matchID=1);
+
+id|select_type |table        |type|possible_keys                                                                                                                                                                                                                                      |key                                                    |key_len|ref  |rows|Extra                   |
+--+------------+-------------+----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------+-------+-----+----+------------------------+
+ 1|PRIMARY     |killsbyplayer|ref |fkKills_GameMatch_idx,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3,ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_4|ix_KillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_4|4      |const|456 |Using where; Using index|
+ 2|MATERIALIZED|playerstats  |ref |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_2,ix_PlayerStats_1                                                                                                                                                    |fkPlayerResults_GameMatch_idx                          |4      |const|78  |Using index             |
+ 
+ 
+EXPLAIN SELECT COUNT(*) AS HitsNotRegistered FROM weaponkillsbyplayer WHERE matchID=1 AND player NOT IN (SELECT player FROM playerstats WHERE matchID=1);
+
+id|select_type |table              |type|possible_keys                                                                                                                              |key                                                |key_len|ref  |rows|Extra                   |
+--+------------+-------------------+----+-------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------+-------+-----+----+------------------------+
+ 1|PRIMARY     |weaponkillsbyplayer|ref |fkWeapinKills_GameMatch_idx,ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons,ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency|ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons|4      |const|117 |Using where; Using index|
+ 2|MATERIALIZED|playerstats        |ref |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_2,ix_PlayerStats_1                                            |fkPlayerResults_GameMatch_idx                      |4      |const|78  |Using index             |
+ 
+id|select_type |table              |type|possible_keys                                                                                                                                                                                            |key                                                          |key_len|ref  |rows|Extra                   |
+--+------------+-------------------+----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------+-------+-----+----+------------------------+
+ 1|PRIMARY     |weaponkillsbyplayer|ref |fkWeapinKills_GameMatch_idx,ix_WeaponKillsByPlayer_sqlCheckNotRegisteredWeapons,ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2|ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2|4      |const|117 |Using where; Using index|
+ 2|MATERIALIZED|playerstats        |ref |PRIMARY,fkPlayerResults_GameMatch_idx,fkPlayer_DWPlayerID_idx,ix_PlayerStats_2,ix_PlayerStats_1                                                                                                          |fkPlayerResults_GameMatch_idx                                |4      |const|78  |Using index             |
+ 
+EXPLAIN SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=1 AND Deaths>0 AND player NOT IN (SELECT player FROM deathsbyplayer WHERE matchID=1);
+
+id|select_type       |table         |type|possible_keys                                                                                                                                                                                                                                                  |key                   |key_len|ref  |rows|Extra                   |
+--+------------------+--------------+----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+-------+-----+----+------------------------+
+ 1|PRIMARY           |playerstats   |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1                                                                                                                                                                                                |ix_PlayerStats_1      |4      |const|78  |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|deathsbyplayer|ref |fkDeaths_GameMatch_idx,ix_DeathsByPlayer_sqlFillPlayerMatchSide,ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2,ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3,ix_DeathsByPlayer_sqlC|fkDeaths_GameMatch_idx|4      |const|448 |Using index             |
+ 
+ id|select_type       |table         |type|possible_keys                                                                                                                                                                                                                                                  |key                   |key_len|ref  |rows|Extra                   |
+--+------------------+--------------+----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+-------+-----+----+------------------------+
+ 1|PRIMARY           |playerstats   |ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1,ix_PlayerStats_3,ix_PlayerStats_4                                                                                                                                                              |ix_PlayerStats_4      |4      |const|78  |Using where; Using index|
+ 2|DEPENDENT SUBQUERY|deathsbyplayer|ref |fkDeaths_GameMatch_idx,ix_DeathsByPlayer_sqlFillPlayerMatchSide,ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency,ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2,ix_DeathsByPlayer_sqlCheckKillsAndDeathsSumConsistency_3,ix_DeathsByPlayer_sqlC|fkDeaths_GameMatch_idx|4      |const|448 |Using index             |
+ 
+EXPLAIN SELECT count(*) FROM playerstats WHERE SteamID=0 AND matchID=1;
+
+id|select_type|table      |type|possible_keys                                                                                                     |key             |key_len|ref  |rows|Extra                   |
+--+-----------+-----------+----+------------------------------------------------------------------------------------------------------------------+----------------+-------+-----+----+------------------------+
+ 1|SIMPLE     |playerstats|ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1,ix_PlayerStats_3,ix_PlayerStats_4,ix_PlayerStats_5|ix_PlayerStats_5|4      |const|78  |Using where; Using index|
+
+EXPLAIN SELECT count(*) FROM playerstats WHERE SteamID='0' AND matchID=1;
+ 
+id|select_type|table      |type|possible_keys                                                                                                     |key             |key_len|ref        |rows|Extra                   |
+--+-----------+-----------+----+------------------------------------------------------------------------------------------------------------------+----------------+-------+-----------+----+------------------------+
+ 1|SIMPLE     |playerstats|ref |fkPlayerResults_GameMatch_idx,ix_PlayerStats_2,ix_PlayerStats_1,ix_PlayerStats_3,ix_PlayerStats_4,ix_PlayerStats_5|ix_PlayerStats_5|127    |const,const|1   |Using where; Using index|
+ 
+ SHOW INDEX FROM hlldw.playerstats
+ SELECT count(*) FROM playerstats
+ SELECT count(DISTINCT SteamID) FROM playerstats
+ 
+ 

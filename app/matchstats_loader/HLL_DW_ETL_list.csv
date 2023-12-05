@@ -9,6 +9,6 @@
 # Entry format for server matches bulk load:
 # Info: matchID (RCON map_id) is unique to all the same servers managed by one rcon and all RCON matches stats can be downloaded from any RCON server port
 # M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePrefix|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
-#M|||1|||https://server.comunidadhll.es:5443|||1526501|||1526515|||CH-HLL-Casual|||Comunidad Hispana HLL Server X||||||Comunidad Hispana HLL|||0|||0
-#Todo el mes de septiembre de la Comunidad >>> M|||1|||https://server.comunidadhll.es:5443|||1524559|||1525556|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-M|||1|||https://server.comunidadhll.es:5443|||1524559|||1524559|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#Todo el mes de septiembre de la Comunidad >>> M|||1|||https://server.comunidadhll.es|||1524565|||1525559|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+
+
