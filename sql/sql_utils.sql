@@ -5,7 +5,7 @@
 SHOW SESSION VARIABLES LIKE 'character\_set\_%';
 SHOW SESSION VARIABLES LIKE 'collation\_%';
 SET collation_connection = @@collation_database;
-
+SELECT @@collation_database;
 
 XXXXXXXXXXXXXXXXXXXXXXXX SECURE STOP XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX;
 

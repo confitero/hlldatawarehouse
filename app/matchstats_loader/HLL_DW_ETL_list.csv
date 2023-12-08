@@ -10,5 +10,10 @@
 # Info: matchID (RCON map_id) is unique to all the same servers managed by one rcon and all RCON matches stats can be downloaded from any RCON server port
 # M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePrefix|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
 #Todo el mes de septiembre de la Comunidad >>> M|||1|||https://server.comunidadhll.es|||1524565|||1525559|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#M|||1|||https://server.comunidadhll.es|||1525560|||1525563|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
 
+#Partida con entrada Player duplicada por tildes
+#M|||1|||https://server.comunidadhll.es|||1524577|||1524577|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+
+S|||1|||https://server.comunidadhll.es/#/gamescoreboard/1524586|||CH-HLL-Casual-1524586|||Comunidad Hispana HLL|||||||||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0|||0|||0
 

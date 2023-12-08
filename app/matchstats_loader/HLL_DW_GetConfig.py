@@ -3,6 +3,12 @@ import os.path
 import logging
 import HLL_DW_error
 
+def init():
+    global runParams
+    runParams = {}
+    runParams["cTest"]=0
+    runParams["cDebug"]=0
+
 def getConfigArray(strlogfilename,strconfigfile):
 
     config = configparser.ConfigParser()
@@ -25,6 +31,7 @@ def getConfigArray(strlogfilename,strconfigfile):
             configDict["dbpass"] = config.get("HLLdatabase","dbpass")
             configDict["dbname"] = config.get("HLLdatabase","dbname")
             configDict["dbcharset"] = config.get("HLLdatabase","dbcharset")
+            configDict["dbcollation"] = config.get("HLLdatabase","dbcollation")
             return configDict        
         else:
             raise Exception("Not valid ini sections or values not not found")

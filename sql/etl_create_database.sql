@@ -15,7 +15,7 @@ SET @schemaName='hlldw';
 -- -----------------------------------------------------
 -- Schema hlldw
 -- -----------------------------------------------------
-SET @strSQL=CONCAT('CREATE SCHEMA IF NOT EXISTS ', @schemaName, ' DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
+SET @strSQL=CONCAT('CREATE SCHEMA IF NOT EXISTS ', @schemaName, ' DEFAULT CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;');
 PREPARE S1 FROM @strSQL;
 EXECUTE S1;
 
@@ -25,7 +25,6 @@ EXECUTE S1;
 
 -- ****************************************************************************************************************************************************************************
 -- STATIC DATA TABLES
-
 
 -- -----------------------------------------------------
 -- Table `Map`
@@ -109,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `Weapon` (
   `Category2` VARCHAR(50) NOT NULL,
   `Category3` VARCHAR(50) NOT NULL,
   `Side1` VARCHAR(50) NOT NULL,
-  `Side2` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin' NOT NULL,
+  `Side2` VARCHAR(50) NOT NULL,
   `Model` VARCHAR(50) NULL,
   `WeaponFull` VARCHAR(80) NULL,
   `Side` TINYINT NULL,
@@ -191,12 +190,11 @@ ENGINE = InnoDB;
 -- Table `Player`
 -- -----------------------------------------------------
 CREATE TABLE `player` (
-	`DWPlayerID` VARCHAR(30) NOT NULL COMMENT 'Database internal player ID' COLLATE 'utf8mb4_unicode_ci',
-	`SteamID` VARCHAR(30) NOT NULL COLLATE 'utf8mb4_unicode_ci',
+	`DWPlayerID` VARCHAR(30) NOT NULL COMMENT 'Database internal player ID',
+	`SteamID` VARCHAR(30) NOT NULL,
 	`Rank` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
 	PRIMARY KEY (`DWPlayerID`) USING BTREE
 )
-COLLATE='utf8mb4_unicode_ci'
 ENGINE=InnoDB;
 
 create INDEX `ix_Player_SteamID` USING HASH ON `player` (`SteamID`);
@@ -415,6 +413,38 @@ CREATE TABLE IF NOT EXISTS `MatchStreamers` (
     ON UPDATE NO ACTION)
 ENGINE = INNODB;
 
+-- -----------------------------------------------------
+-- Table `hll_log`
+-- -----------------------------------------------------
+
+create TABLE IF NOT EXISTS `hll_log` (
+	`ts` datetime,
+	`tlog` TEXT
+)
+
+-- *****************************************************************************************************************************
+-- DB Procedures
+-- *****************************************************************************************************************************
+
+DROP PROCEDURE if EXISTS `proc_InsertPlayerStats`;
+delimiter $$
+CREATE PROCEDURE `proc_InsertPlayerStats` (IN vLog TINYINT, IN vSQL TEXT)
+
+BEGIN
+	
+	IF vLog=1 THEN
+		INSERT INTO hll_log (ts,tlog) VALUES (current_timestamp(),concat('proc_InsertPlayerStats: ',vSQL));
+	END IF;
+
+	PREPARE S1 FROM vSQL;
+	EXECUTE S1;
+	
+END; $$
+
+delimiter ;
+
+
+-- *****************************************************************************************************************************
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

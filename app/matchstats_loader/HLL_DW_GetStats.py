@@ -5,6 +5,7 @@ import urllib.parse
 import json
 import HLL_DW_error
 import HLL_DW_DBLoad
+import HLL_DW_GetConfig
 
 def parseURLGetMatchIDandServer (jsonRCONStatsUrlprefix,strline,strETLmatchesFileName,CSVLine):
     # Parse match stats URL line and get server matchID
@@ -47,7 +48,7 @@ def getAndSaveMatchJsonFile (strschema,statsurl,jsonDestFilePath):
             statsPageBodyTXT = statspage.text
 
             with io.open(jsonDestFilePath,'w',encoding='utf8') as jsonFile:
-                jsonFile.write(statsPageBodyTXT)
+                if HLL_DW_GetConfig.runParams["cTest"]==0: jsonFile.write(statsPageBodyTXT)
 
             statspage.close()
             jsonFile.close()
@@ -67,10 +68,12 @@ def getAndSaveMatchJsonFile (strschema,statsurl,jsonDestFilePath):
         return ""
   
 
-def getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine):
+def getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine):
     """Download stats JSON from match stats URL and load it into DW database
 
     Args:
+        dbConn (Object): pymysql connection
+        dbcursor (Object): pymysql cursor
         matchInfofromCSV (dict): match info from CSV file
         hlldwconfig (dict): ini app config
         CSVLine (int): match CSV line number, used to report error in logging
@@ -87,7 +90,7 @@ def getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine):
                 matchJsonFileName = hlldwconfig["jsonDestFilePath"] + matchInfofromCSV["CMID"]  + "-" + matchStatsInfofromURL["RCONmatchIDfromUrl"] + "-" + matchStatsServer.replace(".","_").replace(":","_") + "-" + matchInfofromCSV["MatchName"].strip() + ".json"
                 statsPageBody=getAndSaveMatchJsonFile (matchStatsInfofromURL["schema"],matchStatsInfofromURL["url"], matchJsonFileName) # GetAndSaveMatchJson: Download the jSON match stats http page and save to a local file
                 if statsPageBody!="":
-                    iResult=HLL_DW_DBLoad.dwDbLoadMatchJSON (matchInfofromCSV,matchStatsInfofromURL,statsPageBody,hlldwconfig["dbserver"],hlldwconfig["dbuser"],hlldwconfig["dbpass"],hlldwconfig["dbname"],hlldwconfig["dbcharset"])
+                    iResult=HLL_DW_DBLoad.dwDbLoadMatchJSON (dbConn,dbcursor,matchInfofromCSV,matchStatsInfofromURL,statsPageBody)
                     if iResult==0:
                         return 1 # Returns 1 as 1 match succesfully loaded
 

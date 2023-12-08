@@ -3,6 +3,7 @@ import logging
 import HLL_DW_GetConfig
 import HLL_DW_GetStats
 import HLL_DW_error
+import HLL_DW_DBLoad
 import os,sys
 
 # Logging file name
@@ -20,9 +21,16 @@ CstrConfigfilename = "./HLL_DW_Config.ini"
 
 #.....................................................................
 
-if len(sys.argv)>1:
-    if sys.argv[2] == "deletelog":
+HLL_DW_GetConfig.init()
+
+for vArgument in sys.argv:
+    if vArgument=="deletelog":
         os.remove(CstrLogfilename)
+    if vArgument=="test":
+        HLL_DW_GetConfig.runParams["cTest"]=1
+    if vArgument=="debug":
+        HLL_DW_GetConfig.runParams["cDebug"]=1
+
 
 # Initialize app logging in file CstrLogfilename
 logging.basicConfig(filename=CstrLogfilename, encoding='utf-8', level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -35,11 +43,15 @@ if hlldwconfig==-1:
 #_______________________________________________________________________________________________________
 # LoadMatchesfromCSVBulkFile >>> SECTION - BEGIN
 
+
 # Get matches list to ETL and run ETL processes
 #.....................................................................
 
 # Process each stats match URL from .CSV load file matchesETLFile
 iResult=0
+dbConn=None
+dbcursor=None
+
 try:
     statslistfile = open(hlldwconfig["matchesETLFile"] , 'r')
     CSVLine = 0
@@ -72,13 +84,19 @@ try:
                     matchInfofromCSV["ResultAllies"] = "0"
                     matchInfofromCSV["ResultAxis"] = "0"
 
-                    for iMatchID in range(matchInfofromCSV["MatchID-Start"],matchInfofromCSV["MatchID-End"]+1):
-                        matchInfofromCSV["MatchName"] = matchInfofromCSV["MatchNamePattern"] + str(iMatchID)
-                        matchInfofromCSV["MatchDesc"] = matchInfofromCSV["MatchNamePattern"] + " server match stats for RCON map_id " + str(iMatchID)
-                        matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
-                        iOK=HLL_DW_GetStats.getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine)
-                        if iOK>=0:
-                            iProcessedMatchesOK+=1
+                    dbConn,dbcursor,iResult=HLL_DW_DBLoad.dwDbOpenDB (hlldwconfig)
+                    if iResult==0:
+
+                        for iMatchID in range(matchInfofromCSV["MatchID-Start"],matchInfofromCSV["MatchID-End"]+1):
+                            matchInfofromCSV["MatchName"] = matchInfofromCSV["MatchNamePattern"] + str(iMatchID)
+                            matchInfofromCSV["MatchDesc"] = matchInfofromCSV["MatchNamePattern"] + " server match stats for RCON map_id " + str(iMatchID)
+                            matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
+                            iOK=HLL_DW_GetStats.getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine)
+                            if iOK>=0:
+                                iProcessedMatchesOK+=1                    
+                        HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
+                    else:
+                        iResult-=1
 
                 if matchInfofromCSV["LoadType"]=="S":
                     # CSV batch line content for new match to load into DW database: S CMID StatsUrl MatchName MatchDesc ClansCoAllies ClansCoAxis GameServerName GameServerIP GameServerOwner ResultAllies ResultAxis MatchType CompetitionID
@@ -96,8 +114,16 @@ try:
                     matchInfofromCSV["MatchType"] = statsline[12]
                     matchInfofromCSV["CompetitionID"] = statsline[13]
                     if matchInfofromCSV["StatsUrl"]:
-                         if HLL_DW_GetStats.getAndLoadMatch(matchInfofromCSV,hlldwconfig,CSVLine)>=0:
-                            iProcessedMatchesOK+=1
+                        dbConn,dbcursor,iResult=HLL_DW_DBLoad.dwDbOpenDB (hlldwconfig)
+                        if iResult==0:
+
+                            if HLL_DW_GetStats.getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine)>=0:
+                                iProcessedMatchesOK+=1
+                            
+                            HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
+
+                    else:
+                        iResult-=1
 
     statslistfile.close()
     if iResult<0:

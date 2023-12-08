@@ -273,3 +273,170 @@ id|select_type|table      |type|possible_keys                                   
  SELECT count(DISTINCT SteamID) FROM playerstats
  
  
+SELECT COLLATION_NAME, PAD_ATTRIBUTE FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME = 'utf8mb4';
+SELECT * FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME = 'utf8mb4';
+SELECT * FROM INFORMATION_SCHEMA.COLLATIONS WHERE COLLATION_NAME LIKE 'uca%';
+SELECT * FROM INFORMATION_SCHEMA.COLLATIONS WHERE COLLATION_NAME LIKE '%span%';
+SELECT * FROM INFORMATION_SCHEMA.COLLATIONS WHERE id=2311
+
+SHOW SESSION VARIABLES LIKE 'character\_set\_%';
+SHOW SESSION VARIABLES LIKE 'collation\_%';
+SET collation_connection = @@collation_database;
+SET collation_connection = "utf8mb4_unicode_ci";
+SET collation_connection = uca1400_as_cs;
+SET collation_connection = uca1400_ai_ci;
+SET NAMES utf8mb4 COLLATE uca1400_as_cs; 
+
+SELECT @@collation_database;
+
+SELECT @@collation_database;
+ALTER DATABASE hlldw DEFAULT COLLATE ='uca1400_as_cs';
+
+ALTER TABLE clan CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE clan MODIFY ClanName VARCHAR(100) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE clan MODIFY Country VARCHAR(100) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE clan MODIFY ClanAcro VARCHAR(100) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from clan;
+
+ALTER TABLE clantag CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE clantag MODIFY ClanTag VARCHAR(15) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from clantag;
+
+ALTER TABLE community CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE community MODIFY CommunityName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from community;
+
+ALTER TABLE competition CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE competition MODIFY CompetitionName VARCHAR(100) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE competition MODIFY CompetitionOrga VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from competition;
+
+ALTER TABLE deathsbyplayer CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE deathsbyplayer MODIFY Victim VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE deathsbyplayer MODIFY Killer VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from deathsbyplayer;
+
+ALTER TABLE gamematch CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY MatchName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY MatchDesc VARCHAR(150) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY ClansCoAllies VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY ClansCoAxis VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY RCONMapName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY RCONServerNumber VARCHAR(5) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY StatsUrl VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY JSONStatsURL VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY GameServerName VARCHAR(255) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY GameServerIP VARCHAR(15) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE gamematch MODIFY GameServerOwner VARCHAR(100) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from gamematch;
+
+ALTER TABLE killsbyplayer CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE killsbyplayer MODIFY Victim VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE killsbyplayer MODIFY Killer VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from killsbyplayer;
+
+ALTER TABLE map CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE map MODIFY MapName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE map MODIFY MapKey VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE map MODIFY MapDesc VARCHAR(100) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from map;
+
+ALTER TABLE matchsquads CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchsquads MODIFY Player VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchsquads MODIFY SteamID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchsquads MODIFY SquadRole VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchsquads MODIFY PlayerRole VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchsquads MODIFY SquadName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from matchsquads;
+
+ALTER TABLE matchstreamers CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchstreamers MODIFY CastURL VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchstreamers MODIFY SteamID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from matchstreamers;
+
+ALTER TABLE matchtype CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE matchtype MODIFY MatchTypeDesc VARCHAR(45) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from matchtype;
+
+ALTER TABLE player CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE player MODIFY DWPlayerID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE player MODIFY SteamID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from player;
+
+SET GLOBAL foreign_key_checks=OFF;
+SET GLOBAL foreign_key_checks=ON;
+SHOW GLOBAL VARIABLES LIKE 'foreign_key_checks';
+ALTER TABLE playerstats drop CONSTRAINT `fkPlayerStats_DWPlayerID`
+ALTER TABLE playerstats CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY Player VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY DWPlayerID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY SteamID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY Nemesis MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY Victims MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY PlayerClanTag VARCHAR(15) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY KillsByWeapons MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats MODIFY DeathsByWeapons MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerstats ADD CONSTRAINT `fkPlayerStats_DWPlayerID` FOREIGN KEY (`DWPlayerID`) REFERENCES `player` (`DWPlayerID`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+show full columns from playerstats;
+
+ALTER TABLE player CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE player MODIFY DWPlayerID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE player MODIFY SteamID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from player;
+
+ALTER TABLE playerhits CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerhits MODIFY Player VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerhits MODIFY Victim VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerhits MODIFY Weapon VARCHAR(500) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playerhits MODIFY Type VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from playerhits;
+
+ALTER TABLE playernicks CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playernicks MODIFY SteamID VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE playernicks MODIFY PlayerNick VARCHAR(30) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from playernicks;
+
+ALTER TABLE weapon CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Weapon VARCHAR(500) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Category1 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Category2 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Category3 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Side1 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Side2 VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY Model VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapon MODIFY WeaponFull VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from weapon;
+
+ALTER TABLE weapondeathsbyplayer CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapondeathsbyplayer MODIFY Player VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weapondeathsbyplayer MODIFY Weapon VARCHAR(500) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from weapondeathsbyplayer;
+
+ALTER TABLE weaponkillsbyplayer CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weaponkillsbyplayer MODIFY Player VARCHAR(50) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+ALTER TABLE weaponkillsbyplayer MODIFY Weapon VARCHAR(500) CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;
+show full columns from weaponkillsbyplayer;
+
+SELECT * FROM INFORMATION_SCHEMA.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME LIKE 'uca1400_ai_ci';
+
+UPDATE INFORMATION_SCHEMA.COLLATIONS SET CHARACTER_SET_NAME = 'utf8mb4',ID=2311 WHERE COLLATION_NAME='uca1400_as_cs';
+
+CREATE TABLE prueba (campo varchar(20) PRIMARY KEY);
+INSERT INTO prueba (campo) VALUES ('á');
+SELECT * FROM prueba;
+DROP TABLE prueba;
+
+call proc_InsertPlayerStats (1,'INSERT INTO PlayerStats (CMID,MatchID,Player,        DWPlayerID,RCONPlayerID,SteamID,        Kills,Deaths,TKs,        KD,MaxKillStreak,KillsMin,DeathsMin,        MaxDeathStreak,MaxTKStreak,DeathByTK,DeathByTKStreak,        LongestLifeSec,ShortestLifeSec,MatchActiveTimeSec,        Nemesis,Victims,KillsByWeapons,DeathsByWeapons,        CombatPoints,OffensePoints,DefensePoints,SupportPoints)        VALUES (1,1635,\'alaska.30\',            \'76561199526856801\',265401,\'76561199526856801\',            0,1,0,            0.0,0,0.0,0.16,            1,0,0,0,            335,335,379,            \'{\\"miwel27[250H]\\": 1}\',\'{}\',\'{}\',\'\\"\\"\',            0,0,0,0)')
+
+call proc_InsertPlayerStats (1,'show databases;');
+
+SELECT * FROM hll_log
+
+SET NAMES utf8mb4 COLLATE uca1400_as_cs;
+
+SELECT 1 from gamematch where CMID=1 AND RCONMatchID=1524577
+SELECT * FROM gamematch WHERE MatchID=1642
+
+SELECT * FROM playerstats WHERE MatchID=1642
+
+SELECT * FROM killsbyplayer WHERE killer='César'
