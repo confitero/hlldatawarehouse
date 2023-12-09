@@ -5,7 +5,7 @@
 
 
 #COMPROBAR QUE TODOS COINCIDEN (sumatorio de kills y death de la partida deben coincidir, salvo caídas de jugadores o cambios de nick entre caídas)
-SET @MatchID=1608;
+SET @MatchID=1943;
 SELECT * FROM gamematch WHERE MatchID=@MatchID;
 
 SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),"Error: player count and playerstats distinct steamID not equal","") AS CheckNumPlayers;

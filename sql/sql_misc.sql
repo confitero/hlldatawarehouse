@@ -437,6 +437,22 @@ SET NAMES utf8mb4 COLLATE uca1400_as_cs;
 SELECT 1 from gamematch where CMID=1 AND RCONMatchID=1524577
 SELECT * FROM gamematch WHERE MatchID=1642
 
-SELECT * FROM playerstats WHERE MatchID=1642
+SELECT * FROM playerstats WHERE MatchID=1643
 
 SELECT * FROM killsbyplayer WHERE killer='César'
+
+SELECT DISTINCT weapon FROM weaponkillsbyplayer WHERE weapon NOT IN (SELECT weapon FROM weapon)
+SELECT DISTINCT weapon FROM weapondeathsbyplayer WHERE weapon NOT IN (SELECT weapon FROM weapon)
+SELECT DISTINCT weapon FROM weapon WHERE weapon NOT IN (SELECT DISTINCT weapon FROM weaponkillsbyplayer)
+SELECT DISTINCT weapon FROM weapon WHERE weapon NOT IN (SELECT DISTINCT weapon FROM weapondeathsbyplayer)
+
+SELECT DISTINCT Weapon collate utf8mb4_unicode_ci FROM weaponkillsbyplayer a WHERE a.matchID=1 AND a.weapon IN (SELECT DISTINCT weapon collate utf8mb4_unicode_ci FROM weapon);
+
+SELECT count(*) FROM gamematch WHERE RCONMatchID in
+(1524577,1524586,1524598,1524608,1524614,1524622,1524624,1524627,1524630,1524632,1524637,1524643,1524698,1524699,1524702,1524727,1524742,1524768,1524769,1524793,1524835,1524838,1524851,1524856,1524865,1524872,1524874,1524875,1524880,1524889,1524911,1524919,1524923,1524934,1524935,1524939,1524954,1524974,1524980,1525013,1525037,1525069,1525071,1525073,1525103,1525118,1525120,1525168,1525185,1525204,1525206,1525213,1525236,1525248,1525249)
+
+SELECT * FROM gamematch WHERE endtime>='2023-10-15 00:00:00.000'
+
+SELECT * FROM gamematch WHERE rconmatchid=1526073
+
+2023-12-09 12:07:01,916 ERROR root Error in HLL_DW_DBLoad.py sqlInsertMatch 1 || args: ('mapID not found in table map for mapkey=hill400_offensive_us or several results found',) || ErrDesc: <class 'Exception'> ||ErrMsg: Error searching mapID from MapKey in SQL sentence >> (( SELECT mapID from map where MapKey='hill400_offensive_us' )) for array (( {'RCONMatchID': '1526504', 'CreationTime': '2023-10-30T01:35:30.864', 'StartTime': '2023-10-29T22:29:39', 'EndTime': '2023-10-30T01:27:45', 'DurationSec': 10686, 'RCONServerNumber': '2', 'RCONMapName': 'hill400_offensive_us'} ))

@@ -25,7 +25,7 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
 
     # Get database mapID from table map throught matchInfofromJSON["RCONMapName"]
     mapID=0
-    strsql="SELECT mapID from map where MapKey='%s'" % matchInfofromJSON["RCONMapName"]
+    strsql="SELECT mapID from map where MapKey='%s'  collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]
     try:
         ret=HLLdb.sqlExecute(dbcursor,strsql)
         if ret==1:
@@ -84,7 +84,7 @@ def sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsI
     Returns:
         int: 0 if no errors; -1 if any error
     """
-    strsql=f"SELECT DISTINCT Weapon FROM weaponkillsbyplayer a WHERE a.matchID={MatchDbID} AND a.weapon NOT IN (SELECT DISTINCT weapon FROM weapon);"
+    strsql=f"SELECT DISTINCT Weapon collate utf8mb4_unicode_ci FROM weaponkillsbyplayer a WHERE a.matchID={MatchDbID} AND a.weapon NOT IN (SELECT DISTINCT weapon collate utf8mb4_unicode_ci FROM weapon);"
     try:        
         ret=HLLdb.sqlExecute(dbcursor,strsql)
         if ret==0:
