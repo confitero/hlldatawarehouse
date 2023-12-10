@@ -25,7 +25,7 @@ HLL_DW_GetConfig.init()
 
 for vArgument in sys.argv:
     if vArgument=="deletelog":
-        os.remove(CstrLogfilename)
+        if os.path.isfile(CstrLogfilename): os.remove(CstrLogfilename)
     if vArgument=="test":
         HLL_DW_GetConfig.runParams["cTest"]=1
     if vArgument=="debug":
@@ -67,7 +67,7 @@ try:
                 matchInfofromCSV = {}
                 matchInfofromCSV["LoadType"] = statsline[0]
                 if matchInfofromCSV["LoadType"]=="R":
-                    # CSV batch line content for range to load into DW database: M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePattern|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
+                    # CSV batch line content for range to load into DW database: R|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePattern|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
                     matchInfofromCSV["CMID"] = statsline[1]
                     matchInfofromCSV["StatServerUrl"] = statsline[2]
                     matchInfofromCSV["MatchID-Start"] = int(statsline[3])
@@ -122,6 +122,38 @@ try:
                             
                             HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
 
+                    else:
+                        iResult-=1
+
+                if matchInfofromCSV["LoadType"]=="M":
+                    # CSV batch line content for range to load into DW database: M|||CMID|||StatServerUrl|||MatchNamePattern|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID|||MatchID's(comma separated)
+                    matchInfofromCSV["CMID"] = statsline[1]
+                    matchInfofromCSV["StatServerUrl"] = statsline[2]
+                    matchInfofromCSV["MatchNamePattern"] = statsline[3]
+                    matchInfofromCSV["GameServerName"] = statsline[4]
+                    matchInfofromCSV["GameServerIP"] = statsline[5]
+                    matchInfofromCSV["GameServerOwner"] = statsline[6]
+                    matchInfofromCSV["MatchType"] = statsline[7]
+                    matchInfofromCSV["CompetitionID"] = statsline[8]
+
+                    matchInfofromCSV["ClansCoAllies"] = ""
+                    matchInfofromCSV["ClansCoAxis"] = ""
+                    matchInfofromCSV["ResultAllies"] = "0"
+                    matchInfofromCSV["ResultAxis"] = "0"
+
+                    listOfMatches = []
+                    listOfMatches = statsline[9].strip().split(",")
+
+                    dbConn,dbcursor,iResult=HLL_DW_DBLoad.dwDbOpenDB (hlldwconfig)
+                    if iResult==0:
+                        for iMatchID in listOfMatches:
+                            matchInfofromCSV["MatchName"] = matchInfofromCSV["MatchNamePattern"] + str(iMatchID)
+                            matchInfofromCSV["MatchDesc"] = matchInfofromCSV["MatchNamePattern"] + " server match stats for RCON map_id " + str(iMatchID)
+                            matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
+                            iOK=HLL_DW_GetStats.getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine)
+                            if iOK>=0:
+                                iProcessedMatchesOK+=1                    
+                        HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
                     else:
                         iResult-=1
 

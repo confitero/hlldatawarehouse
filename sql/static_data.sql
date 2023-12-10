@@ -270,6 +270,8 @@ INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Mo
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (180,'HULL BESA','Tank','Medium tank','Tank MG','Allies','GB','Cromwell');
 INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (181,'HULL DT','Tank','Recon tank','Tank MG','Allies','Soviet','BA-10');
 
+INSERT INTO Weapon (WeaponID,Weapon,Category1,Category2,Category3,Side1,Side2,Model) VALUES (182,'MG 42','Infantry','MG','MG','Axis','Germany','');
+
 x'M1928A1 THOMPSON'
 x'SMLE No.1 Mk III'
 x'Lee–Enfield No.4 Mk I'
