@@ -1,5 +1,5 @@
 # Entry format for single match load: LoadType=S|||CMID|||StatsUrl|||MatchName|||MatchDesc|||ClansCoAllies|||ClansCoAxis|||GameServerName|||GameServerIP|||GameServerOwner|||ResultAllies|||ResultAxis|||MatchType|||CompetitionID
-# LoadType: S = Single match; M = Multiple matches
+# LoadType: S = Single match; M = Multiple matches; R = Range of matches
 # MatchType: 0 = Casual; 1 = Friendly/Amistoso; 2 = Competitive/Competitivo
 #1ª partida torneo Campaña otoño 2023 ##S|||1|||https://server.comunidadhll.es:5443/#/gamescoreboard/1526453|||CHHLL-campain-e1a-1526453|||Torneo Guerra de la Comunidad HHLL partida 1 Ed1-2023 RCON map_id 1526453|||NA Clanes|||NA Clanes|||Comunidad Hispana HLL Server 3||||||Comunidad Hispana HLL|||5|||0|||1|||8
 #2ª partida torneo Campaña otoño 2023 ##S|||1|||https://server.comunidadhll.es:3443/#/gamescoreboard/1526637|||CHHLL-campain-e1a-1526637|||Torneo Guerra de la Comunidad HHLL partida 2 Ed1-2023 RCON map_id 1526637|||NA Clanes|||NA Clanes|||Comunidad Hispana HLL Server 3||||||Comunidad Hispana HLL|||1|||4|||1|||8
@@ -8,17 +8,25 @@
 
 # Entry format for server matches bulk load:
 # Info: matchID (RCON map_id) is unique to all the same servers managed by one rcon and all RCON matches stats can be downloaded from any RCON server port
-# M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePrefix|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
-#Todo el mes de septiembre de la Comunidad >>> M|||1|||https://server.comunidadhll.es|||1524565|||1525559|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+# R|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePrefix|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
+#Todo el mes de septiembre de la Comunidad >>> R|||1|||https://server.comunidadhll.es|||1524565|||1525559|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
 #Partida con entrada Player duplicada por tildes
-#M|||1|||https://server.comunidadhll.es|||1524577|||1524577|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1524577|||1524577|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
 
 #Mes de octubre 2023 de la Comunidad
-#M|||1|||https://server.comunidadhll.es|||1525560|||1525563|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-#M|||1|||https://server.comunidadhll.es|||1525564|||1525717|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-#M|||1|||https://server.comunidadhll.es|||1525718|||1526072|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-#M|||1|||https://server.comunidadhll.es|||1526073|||1526412|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-#M|||1|||https://server.comunidadhll.es|||1526413|||1526556|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-M|||1|||https://server.comunidadhll.es|||1526504|||1526504|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-M|||1|||https://server.comunidadhll.es|||1526362|||1526362|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1525560|||1525563|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1525564|||1525717|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1525718|||1526072|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1526073|||1526412|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1526413|||1526556|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1526504|||1526504|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1526362|||1526362|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
 
+#Mes de noviembre 2023 de la Comunidad
+#R|||1|||https://server.comunidadhll.es|||1526557|||1527517|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+
+#Mes de diciembre 2023 de la Comunidad (PARCIAL)
+#R|||1|||https://server.comunidadhll.es|||1527518|||1527887|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+
+#Mes de junio-julio-agosto 2023 de la Comunidad
+#R|||1|||https://server.comunidadhll.es|||1521027|||1524564|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0

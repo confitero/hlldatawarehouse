@@ -448,11 +448,31 @@ SELECT DISTINCT weapon FROM weapon WHERE weapon NOT IN (SELECT DISTINCT weapon F
 
 SELECT DISTINCT Weapon collate utf8mb4_unicode_ci FROM weaponkillsbyplayer a WHERE a.matchID=1 AND a.weapon IN (SELECT DISTINCT weapon collate utf8mb4_unicode_ci FROM weapon);
 
-SELECT count(*) FROM gamematch WHERE RCONMatchID in
-(1524577,1524586,1524598,1524608,1524614,1524622,1524624,1524627,1524630,1524632,1524637,1524643,1524698,1524699,1524702,1524727,1524742,1524768,1524769,1524793,1524835,1524838,1524851,1524856,1524865,1524872,1524874,1524875,1524880,1524889,1524911,1524919,1524923,1524934,1524935,1524939,1524954,1524974,1524980,1525013,1525037,1525069,1525071,1525073,1525103,1525118,1525120,1525168,1525185,1525204,1525206,1525213,1525236,1525248,1525249)
+SELECT count(*) FROM gamematch WHERE 
 
-SELECT * FROM gamematch WHERE endtime>='2023-10-15 00:00:00.000'
 
-SELECT * FROM gamematch WHERE rconmatchid=1526073
+SELECT count(*) FROM gamematch WHERE endtime>='2023-10-01 00:00:00.000'
+
+SELECT * FROM gamematch WHERE rconmatchid=1526504
+SELECT * FROM `map` WHERE mapkey='hill400_offensive_us'
+SELECT * FROM `map` WHERE mapkey LIKE 'hill400%'
+SELECT mapID from map where MapKey='hill400_offensive_us' collate utf8mb4_unicode_ci
 
 2023-12-09 12:07:01,916 ERROR root Error in HLL_DW_DBLoad.py sqlInsertMatch 1 || args: ('mapID not found in table map for mapkey=hill400_offensive_us or several results found',) || ErrDesc: <class 'Exception'> ||ErrMsg: Error searching mapID from MapKey in SQL sentence >> (( SELECT mapID from map where MapKey='hill400_offensive_us' )) for array (( {'RCONMatchID': '1526504', 'CreationTime': '2023-10-30T01:35:30.864', 'StartTime': '2023-10-29T22:29:39', 'EndTime': '2023-10-30T01:27:45', 'DurationSec': 10686, 'RCONServerNumber': '2', 'RCONMapName': 'hill400_offensive_us'} ))
+
+CREATE TABLE map_history (creation_time,"start","end",server_number,map_name)
+
+map_history (id creation_time,"start","end",server_number,map_name)
+
+CREATE TABLE map_history (
+	id BIGINT NOT NULL PRIMARY key,
+	creation_time datetime NULL,
+	startTime datetime NOT NULL,
+	endTime datetime NULL,
+	server_number INT NULL,
+	map_name varchar (50) NOT NULL
+);
+CREATE INDEX ix_map_history_end USING btree ON map_history (endTime);
+CREATE INDEX ix_map_history_start USING btree ON map_history (startTime);
+
+SELECT count(*) FROM map_history

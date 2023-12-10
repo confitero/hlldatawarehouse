@@ -66,7 +66,7 @@ try:
                 statsline = strLine.strip().split("|||")
                 matchInfofromCSV = {}
                 matchInfofromCSV["LoadType"] = statsline[0]
-                if matchInfofromCSV["LoadType"]=="M":
+                if matchInfofromCSV["LoadType"]=="R":
                     # CSV batch line content for range to load into DW database: M|||CMID|||StatServerUrl|||MatchID-Start|||MatchID-End|||MatchNamePattern|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID
                     matchInfofromCSV["CMID"] = statsline[1]
                     matchInfofromCSV["StatServerUrl"] = statsline[2]
