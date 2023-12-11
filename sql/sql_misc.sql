@@ -476,3 +476,14 @@ CREATE INDEX ix_map_history_end USING btree ON map_history (endTime);
 CREATE INDEX ix_map_history_start USING btree ON map_history (startTime);
 
 SELECT count(*) FROM map_history
+
+SELECT * FROM gamematch WHERE rconmatchID=1521523
+SELECT id FROM map_history WHERE id BETWEEN 1521027 AND 1524564 AND id not IN (SELECT rconmatchID FROM gamematch)
+
+SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 4 AND 5
+SELECT min(id),max(id) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
+
+SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
+union
+SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 1 AND 3 AND id IN (SELECT rconmatchID FROM gamematch)
+

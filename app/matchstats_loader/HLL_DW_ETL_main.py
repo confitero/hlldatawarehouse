@@ -24,13 +24,13 @@ CstrConfigfilename = "./HLL_DW_Config.ini"
 HLL_DW_GetConfig.init()
 
 for vArgument in sys.argv:
+    print("Running with: ",vArgument)
     if vArgument=="deletelog":
         if os.path.isfile(CstrLogfilename): os.remove(CstrLogfilename)
     if vArgument=="test":
         HLL_DW_GetConfig.runParams["cTest"]=1
     if vArgument=="debug":
         HLL_DW_GetConfig.runParams["cDebug"]=1
-
 
 # Initialize app logging in file CstrLogfilename
 logging.basicConfig(filename=CstrLogfilename, encoding='utf-8', level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -93,7 +93,10 @@ try:
                             matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
                             iOK=HLL_DW_GetStats.getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine)
                             if iOK>=0:
-                                iProcessedMatchesOK+=1                    
+                                iProcessedMatchesOK+=1                                
+                                if HLL_DW_GetConfig.runParams["cDebug"]: print(iProcessedMatchesOK,end="\r",flush=True)
+                            else:
+                                if HLL_DW_GetConfig.runParams["cDebug"]: print("x",end="",flush=True)                        
                         HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
                     else:
                         iResult-=1
@@ -119,7 +122,10 @@ try:
 
                             if HLL_DW_GetStats.getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine)>=0:
                                 iProcessedMatchesOK+=1
-                            
+                                if HLL_DW_GetConfig.runParams["cDebug"]: print(".",end="",flush=True)
+                            else:
+                                if HLL_DW_GetConfig.runParams["cDebug"]: print("x",end="",flush=True)                        
+
                             HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
 
                     else:
@@ -152,7 +158,10 @@ try:
                             matchInfofromCSV["StatsUrl"] = matchInfofromCSV["StatServerUrl"] + hlldwconfig["statsURLprefix"] + str(iMatchID)
                             iOK=HLL_DW_GetStats.getAndLoadMatch(dbConn,dbcursor,matchInfofromCSV,hlldwconfig,CSVLine)
                             if iOK>=0:
-                                iProcessedMatchesOK+=1                    
+                                iProcessedMatchesOK+=1
+                                if HLL_DW_GetConfig.runParams["cDebug"]: print(".",end="",flush=True)
+                            else:
+                                if HLL_DW_GetConfig.runParams["cDebug"]: print("x",end="",flush=True)                        
                         HLL_DW_DBLoad.dwDbCloseDB(dbConn,dbcursor)
                     else:
                         iResult-=1
@@ -161,6 +170,7 @@ try:
     if iResult<0:
         print ("Errors = " + str(iResult) + ". See file " + CstrLogfilename)
     else:
+        print ("")
         print ("Processed matches OK: " + str(iProcessedMatchesOK))
 
 except Exception as ex:
