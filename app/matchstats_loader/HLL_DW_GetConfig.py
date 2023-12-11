@@ -8,6 +8,7 @@ def init():
     runParams = {}
     runParams["cTest"]=0
     runParams["cDebug"]=0
+    runParams["cCheck"]=0
 
 def getConfigArray(strlogfilename,strconfigfile):
 

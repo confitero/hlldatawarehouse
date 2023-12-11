@@ -25,13 +25,18 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
 
     # Get database mapID from table map throught matchInfofromJSON["RCONMapName"]
     mapID=0
-    strsql="SELECT mapID from map where MapKey='%s'  collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]
+    strsql="SELECT mapID from map where MapKey='%s' collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]
     try:
         ret=HLLdb.sqlExecute(dbcursor,strsql)
         if ret==1:
             mapID=int(dbcursor.fetchone()[0])
         else:
-            raise Exception("mapID not found in table map for mapkey=" + str(matchInfofromJSON["RCONMapName"]) + " or several results found")
+            strsql="SELECT mapID from map where concat(MapKey,'_RESTART')='%s' collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]
+            ret=HLLdb.sqlExecute(dbcursor,strsql)
+            if ret==1:
+                mapID=int(dbcursor.fetchone()[0])
+            else:
+                raise Exception("mapID not found in table map for mapkey=" + str(matchInfofromJSON["RCONMapName"]) + " or several results found")
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertMatch 1",str(ex.args),str(type(ex)),"Error searching mapID from MapKey in SQL sentence >> (( " + strsql + " )) for array (( " + str(matchInfofromJSON)+" ))")
         return -1
@@ -627,8 +632,12 @@ def dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,d
 
             try:
                 matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S")).seconds
+            except:
+                pass
+            try:
+                matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S.%f")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S.%f")).seconds
             except Exception as ex:
-                HLL_DW_error.log_error("HLL_DW_DBLoad.py dbInsertNewMatchRecord 1",str(ex.args),str(type(ex)),"Error in JSON StartTime/EndTime for match stats content " + str(strMatchJSON[0:2048]))
+                HLL_DW_error.log_error("HLL_DW_DBLoad.py dbInsertNewMatchRecord 1",str(ex.args),str(type(ex)),"Error in JSON StartTime/EndTime format for match stats content " + str(strMatchJSON[0:2048]))
                 return iOK-1
 
             MatchDbID=sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofromJSON)
@@ -691,25 +700,27 @@ def dwDbLoadMatchJSON(dbConn,dbcursor,matchInfofromCSV,matchStatsInfofromURL,sta
 
     iOK=0
     try:
-        #Pre-check if players are registered in database. If not, warns in logging but continues to load match
-        sqlPreCheckNumPlayers(dbcursor)
+        #Pre-check if players are registered in database. If not, warns in log but continues to load match
+        if HLL_DW_GetConfig.runParams["cCheck"]==1:
+            sqlPreCheckNumPlayers(dbcursor)
         
         HLLdb.sqlStartTransaction(dbConn)
         MatchDbID=dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,statsPageBody,dbcursor)
         if MatchDbID>0:
             iOK+=dbLoadPlayerStats(matchInfofromCSV,MatchDbID,statsPageBody,dbcursor)
-            #Post-check if all players are registered in database. If not, aborts match load but continues batch load for next match
-            sqlCheckMatchNumPlayers(dbcursor,MatchDbID)
-            #If there are match stats weapons not registered in DW database, aborts match load but continues batch load for next match
-            if iOK>=0: iOK+=sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsInfofromURL)
-            if iOK>=0: iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
-            if iOK>=0: iOK+=sqlFillPlayerMatchSide (dbcursor,MatchDbID)
-            if iOK>=0: iOK+=sqlFillMatchRoles (dbcursor,MatchDbID)
+            if HLL_DW_GetConfig.runParams["cCheck"]==1:
+                #Post-check if all players are registered in database. If not, warns in log
+                sqlCheckMatchNumPlayers(dbcursor,MatchDbID)
+                #If there are match stats weapons not registered in DW database, aborts match load but continues batch load for next match            
+                if iOK>=0: iOK+=sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsInfofromURL)
+                if iOK>=0: iOK+=sqlFillPlayerClanAndTAG (dbcursor,MatchDbID)
+                if iOK>=0: iOK+=sqlFillPlayerMatchSide (dbcursor,MatchDbID)
+                if iOK>=0: iOK+=sqlFillMatchRoles (dbcursor,MatchDbID)
             if iOK<0:
                 HLLdb.sqlAbort(dbConn)
             else:
                 HLLdb.sqlCommit(dbConn)
-                sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID)
+                if HLL_DW_GetConfig.runParams["cCheck"]==1: sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID)
         else:
             HLLdb.sqlAbort(dbConn)
             iOK+=MatchDbID

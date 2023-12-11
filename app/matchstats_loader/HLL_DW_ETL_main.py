@@ -24,13 +24,15 @@ CstrConfigfilename = "./HLL_DW_Config.ini"
 HLL_DW_GetConfig.init()
 
 for vArgument in sys.argv:
-    print("Running with: ",vArgument)
+    print("Running arg: ",vArgument)
     if vArgument=="deletelog":
         if os.path.isfile(CstrLogfilename): os.remove(CstrLogfilename)
     if vArgument=="test":
         HLL_DW_GetConfig.runParams["cTest"]=1
     if vArgument=="debug":
         HLL_DW_GetConfig.runParams["cDebug"]=1
+    if vArgument=="check":
+        HLL_DW_GetConfig.runParams["cCheck"]=1
 
 # Initialize app logging in file CstrLogfilename
 logging.basicConfig(filename=CstrLogfilename, encoding='utf-8', level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')

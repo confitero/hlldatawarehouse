@@ -481,9 +481,9 @@ SELECT * FROM gamematch WHERE rconmatchID=1521523
 SELECT id FROM map_history WHERE id BETWEEN 1521027 AND 1524564 AND id not IN (SELECT rconmatchID FROM gamematch)
 
 SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 4 AND 5
-SELECT min(id),max(id) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
+SELECT min(id),max(id) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
 
-SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
+SELECT count(*) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
 union
-SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 1 AND 3 AND id IN (SELECT rconmatchID FROM gamematch)
+SELECT count(*) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 1 AND 3 AND id IN (SELECT rconmatchID FROM gamematch)
 
