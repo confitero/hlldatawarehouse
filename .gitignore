@@ -1,7 +1,9 @@
 app/hll-data-analyzer/
 app/.vscode/
 app/matchstats_loader/__pycache__/
+app/matchstats_loader/db_modules/__pycache__
 app/matchstats_loader/*.log
 app/matchstats_loader/tests.py
 json_source_stats/*.json
 json_source_stats/previos/*
+dbeaver_hll/

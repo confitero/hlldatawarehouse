@@ -1,6 +1,7 @@
 import pymysql
 import json
 import HLL_DW_GetConfig
+import datetime
 
 # Server1: https://server.comunidadhll.es/api/get_map_scoreboard?map_id=1526376
 # Server1: https://server.comunidadhll.es/#/gamescoreboard/1526376
@@ -10,6 +11,29 @@ import HLL_DW_GetConfig
 
 # Server3: https://scoreboard.comunidadhll.es:3443/#/gamescoreboard/1526453
 # Server3: https://scoreboard.comunidadhll.es:3443/api/get_map_scoreboard?map_id=1526453
+
+def parseJSONDateTime(strDatetime):
+    """Converts string from different datetime formats to datetime object
+
+    Args:
+        strDatetime (String): String datetime to convert to datetime object
+
+    Returns:
+        int: 0 if error; datetime if convert succeeds
+    """
+    
+    for strFormats in ("%Y-%m-%dT%H:%M:%S","%Y-%m-%dT%H:%M:%S.%f"):
+        try:
+            return datetime.datetime.strptime(strDatetime, strFormats)        
+        except:
+            pass        
+    return 0
+
+if parseJSONDateTime("2022-12-12T09:59:09"): print (parseJSONDateTime("2022-12-12T09:59:09"))
+if parseJSONDateTime("2022-12-12T09:59:09.56"): print (parseJSONDateTime("2022-12-12T09:59:09.56"))
+if parseJSONDateTime("2022-12-12 09:59:09"): print (parseJSONDateTime("2022-12-12 09:59:09"))
+
+exit()
 
 print ("Test: " + str(HLL_DW_GetConfig.runParams["cTest"]))
 

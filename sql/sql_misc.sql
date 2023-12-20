@@ -51,7 +51,7 @@ WHERE a.MatchID=@MatchID AND (a.Kills<>KillsInKillsByPlayer OR a.Kills<>KillsInd
 
 
 #Jugadores sin SteamID
-SELECT * FROM playerstats a WHERE a.SteamID=0;
+SELECT count(*) FROM playerstats a WHERE a.SteamID='0';
 
 #Jugadores sin bando
 SELECT * FROM playerstats a WHERE (a.PlayerSide is null OR a.PlayerSide NOT IN (0,1,2)) AND MatchID=@MatchID;
@@ -481,9 +481,40 @@ SELECT * FROM gamematch WHERE rconmatchID=1521523
 SELECT id FROM map_history WHERE id BETWEEN 1521027 AND 1524564 AND id not IN (SELECT rconmatchID FROM gamematch)
 
 SELECT count(*) FROM map_history WHERE YEAR(endTime)=2023 AND month(endTime) BETWEEN 4 AND 5
-SELECT min(id),max(id) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
+SELECT min(id),max(id) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 9 AND 12 AND id not IN (SELECT rconmatchID FROM gamematch)
 
-SELECT count(*) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 1 AND 3 AND id not IN (SELECT rconmatchID FROM gamematch)
+SELECT count(*),'Pendiente' FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 9 AND 12 AND id not IN (SELECT rconmatchID FROM gamematch)
 union
-SELECT count(*) FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 1 AND 3 AND id IN (SELECT rconmatchID FROM gamematch)
+SELECT count(*),'Cargado' FROM map_history WHERE YEAR(endTime)=2022 AND month(endTime) BETWEEN 9 AND 12 AND id IN (SELECT rconmatchID FROM gamematch)
 
+
+SELECT * FROM information_schema.PROCESSLIST p;
+SELECT * FROM performance_schema.threads t;
+
+SELECT * FROM playerstats WHERE ShortestLifeSec<0;
+SELECT count(*) FROM gamematch;
+SELECT count(*) FROM playerstats;
+SELECT count(*) FROM killsbyplayer;
+SELECT count(*) FROM deathsbyplayer;
+SELECT count(*) FROM weaponkillsbyplayer;
+SELECT count(*) FROM weapondeathsbyplayer;
+SELECT count(*) FROM matchsquads;
+SELECT count(*) FROM map_history;
+SELECT count(*) FROM playernicks;
+SELECT count(*) FROM weapon;
+SELECT count(*) FROM player;
+SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'hlldw';
+SELECT * FROM information_schema.INDEX_STATISTICS LIMIT 10;
+SHOW TABLES FROM INFORMATION_SCHEMA;
+
+SELECT * FROM INFORMATION_SCHEMA.INNODB_SYS_INDEXES a WHERE a.TYPE=0
+
+ALTER TABLE playerstats
+ADD COLUMN   `Nemesis` TEXT(65447) NULL COMMENT 'JSON field with all deaths by player (player, killer, weapon, num of deaths) / Campo JSON en bruto con los Killers de este jugador',
+ADD COLUMN   `Victims` TEXT(65447) NULL COMMENT 'JSON field with all kills by player (player, victim, weapon, num of kills) / Campo JSON en bruto las víctimas de este jugador',
+ADD COLUMN   `KillsByWeapons` TEXT(65447) NULL COMMENT 'JSON field with all kills by player (player, weapon, num of deaths)  / Campo JSON en bruto con las bajas efectuadas por este jugador con cada arma utilizada',
+ADD COLUMN   `DeathsByWeapons` TEXT(65447) NULL COMMENT 'JSON field with all deaths by player (player, weapon, num of deaths)  / Campo JSON en bruto con las bajas sufridas por este jugador con cada arma utilizada / JSON \"death_by_weapons\"';
+
+select version();
+
+SELECT count(*) FROM gamematch

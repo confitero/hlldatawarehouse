@@ -16,12 +16,19 @@ SET @schemaName='hlldw';
 -- Schema hlldw
 -- -----------------------------------------------------
 SET @strSQL=CONCAT('CREATE SCHEMA IF NOT EXISTS ', @schemaName, ' DEFAULT CHARACTER SET utf8mb4 COLLATE uca1400_as_cs;');
+-- SET @strSQL=CONCAT('CREATE SCHEMA IF NOT EXISTS ', @schemaName, ' DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_as_ci;');
 PREPARE S1 FROM @strSQL;
 EXECUTE S1;
 
 SET @strSQL=CONCAT('USE ',@schemaName);
 PREPARE S1 FROM @strSQL;
 EXECUTE S1;
+
+
+CREATE USER uhlldw identified BY 'pwdaa';
+GRANT ALL PRIVILEGES ON *.* TO uhlldw@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+SELECT User, Host FROM mysql.user;
 
 -- ****************************************************************************************************************************************************************************
 -- STATIC DATA TABLES
@@ -203,26 +210,26 @@ create INDEX `ix_Player_SteamID` USING HASH ON `player` (`SteamID`);
 -- Table `PlayerStats`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `PlayerStats` (
-  `CMID` INT NOT NULL COMMENT 'Community/Clan database ID (see Community table)',
+  `CMID` INT UNSIGNED NOT NULL COMMENT 'Community/Clan database ID (see Community table)',
   `MatchID` INT UNSIGNED NOT NULL COMMENT 'DB Match ID',
   `Player` VARCHAR(50) NOT NULL COMMENT 'Player\'s game nick (Steam Nick) as shown in HLL C-RCON stats',
   `DWPlayerID` VARCHAR(30) NOT NULL COMMENT 'Database internal Player ID',
   `RCONPlayerID` INT UNSIGNED NULL COMMENT 'RCON Stats JSON \"player_id\"',
   `SteamID` VARCHAR(30) NULL COMMENT 'Player\'s Steam ID64 (not always available)',
-  `Kills` SMALLINT NOT NULL COMMENT 'Enemy kills made by player',
-  `Deaths` SMALLINT NOT NULL COMMENT 'Player deaths in that match excluded redeploy deaths as that is not logged by HLL C-RCON)',
-  `TKs` SMALLINT NULL COMMENT 'Team kills made by player',
+  `Kills` SMALLINT UNSIGNED NOT NULL COMMENT 'Enemy kills made by player',
+  `Deaths` SMALLINT UNSIGNED NOT NULL COMMENT 'Player deaths in that match excluded redeploy deaths as that is not logged by HLL C-RCON)',
+  `TKs` SMALLINT UNSIGNED NULL COMMENT 'Team kills made by player',
   `KD` FLOAT UNSIGNED NOT NULL COMMENT 'Kill vs deaths ratio by player / JSON \"kill_death_ratio\"',
-  `MaxKillStreak` SMALLINT NOT NULL COMMENT 'Max kills streak made by player before first death or between two deaths / JSON \"kills_streak\"',
+  `MaxKillStreak` SMALLINT UNSIGNED NOT NULL COMMENT 'Max kills streak made by player before first death or between two deaths / JSON \"kills_streak\"',
   `KillsMin` FLOAT UNSIGNED NOT NULL COMMENT 'Kills made by player per minute / JSON \"kills_per_minute\"',
   `DeathsMin` FLOAT UNSIGNED NOT NULL COMMENT 'Número de muertas por minuto sufridas por el jugador / JSON \"deaths_per_minute\"',
-  `MaxDeathStreak` SMALLINT NOT NULL COMMENT 'Max death streak by player with zero kills made in that life / Mayor racha de muertes sufridas por el jugador sin haber matado enemigos / JSON \"deaths_without_kill_streak\"',
-  `MaxTKStreak` SMALLINT NOT NULL COMMENT 'Max team kill streak by player in one life / Mayor racha de bajas de fuego amigo causadas por el jugador sin morir / JSON \"teamkills_streak\"',
-  `DeathByTK` SMALLINT NOT NULL COMMENT 'Times the player has been killed by a team member / Bajas de fuego amigo sufridas por el jugador',
-  `DeathByTKStreak` SMALLINT NOT NULL COMMENT 'Times the player has been killed by a team member in one life / Bajas de fuego amigo sufridas por el jugador sin haber causado bajas al enemigo',
-  `LongestLifeSec` SMALLINT NOT NULL COMMENT 'Longest player life in seconds / Vida más larga del jugador en segundos desde que aparece hasta que es asesinado / JSON \"longest_life_secs\"',
-  `ShortestLifeSec` SMALLINT NOT NULL COMMENT 'Shortest player life in seconds / Vida más corta del jugador en segundos desde que aparece hasta que es asesinado / JSON \"shortest_life_secs\"',
-  `MatchActiveTimeSec` INT NULL COMMENT 'Sum of seconds active by player (lives) / JSON \"time_seconds\"',
+  `MaxDeathStreak` SMALLINT UNSIGNED NOT NULL COMMENT 'Max death streak by player with zero kills made in that life / Mayor racha de muertes sufridas por el jugador sin haber matado enemigos / JSON \"deaths_without_kill_streak\"',
+  `MaxTKStreak` SMALLINT UNSIGNED NOT NULL COMMENT 'Max team kill streak by player in one life / Mayor racha de bajas de fuego amigo causadas por el jugador sin morir / JSON \"teamkills_streak\"',
+  `DeathByTK` SMALLINT UNSIGNED NOT NULL COMMENT 'Times the player has been killed by a team member / Bajas de fuego amigo sufridas por el jugador',
+  `DeathByTKStreak` SMALLINT UNSIGNED NOT NULL COMMENT 'Times the player has been killed by a team member in one life / Bajas de fuego amigo sufridas por el jugador sin haber causado bajas al enemigo',
+  `LongestLifeSec` SMALLINT UNSIGNED NOT NULL COMMENT 'Longest player life in seconds / Vida más larga del jugador en segundos desde que aparece hasta que es asesinado / JSON \"longest_life_secs\"',
+  `ShortestLifeSec` SMALLINT UNSIGNED NOT NULL COMMENT 'Shortest player life in seconds / Vida más corta del jugador en segundos desde que aparece hasta que es asesinado / JSON \"shortest_life_secs\"',
+  `MatchActiveTimeSec` INT UNSIGNED NULL COMMENT 'Sum of seconds active by player (lives) / JSON \"time_seconds\"',
   `Nemesis` TEXT(65447) NULL COMMENT 'JSON field with all deaths by player (player, killer, weapon, num of deaths) / Campo JSON en bruto con los Killers de este jugador',
   `Victims` TEXT(65447) NULL COMMENT 'JSON field with all kills by player (player, victim, weapon, num of kills) / Campo JSON en bruto las víctimas de este jugador',
   `PlayerClanTag` VARCHAR(15) NULL COMMENT 'Tag del jugador en esa partida. Guardarlo aquí evita perder el clan con el que jugó esta partida si cambia de clan posteriormente',
@@ -253,6 +260,18 @@ CREATE TABLE IF NOT EXISTS `PlayerStats` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = INNODB;
+
+ALTER TABLE PlayerStats MODIFY COLUMN CMID INT UNSIGNED NOT NULL COMMENT 'Community/Clan database ID (see Community table)';
+
+ALTER TABLE PlayerStats drop CONSTRAINT `fkPlayerStats_MatchID`;
+ALTER TABLE PlayerStats ADD CONSTRAINT `fkPlayerStats_MatchID` FOREIGN KEY (`MatchID`) REFERENCES `GameMatch` (`MatchID`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+ALTER TABLE PlayerStats drop CONSTRAINT `fkPlayerStats_DWPlayerID`;
+ALTER TABLE PlayerStats ADD CONSTRAINT `fkPlayerStats_DWPlayerID` FOREIGN KEY (`DWPlayerID`) REFERENCES `Player` (`DWPlayerID`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE PlayerStats drop CONSTRAINT `fkPlayerStats_CMID`;
+ALTER TABLE PlayerStats ADD CONSTRAINT `fkPlayerStats_CMID` FOREIGN KEY (`CMID`) REFERENCES `Community` (`CMID`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+
 
 create INDEX `ix_PlayerStats_1` USING HASH ON `PlayerStats` (`MatchID`,`Player`,`PlayerSide`,`Deaths`);
 create INDEX `ix_PlayerStats_2` USING HASH ON `PlayerStats` (`MatchID`,`Player`,`SteamID`,`PlayerSide`);
@@ -334,7 +353,7 @@ create INDEX `ix_WeaponKillsByPlayer_sqlCheckKillsAndDeathsSumConsistency_2` USI
 CREATE TABLE IF NOT EXISTS `PlayerNicks` (
   `SteamID` VARCHAR(30) NOT NULL,
   `PlayerNick` VARCHAR(50) NOT NULL COMMENT 'Player Steam nick',
-  `MainNick` BIT(1) NULL COMMENT '1 = main nick / 0 = secondary nick used in some matches',
+  `MainNick` tinyint NULL COMMENT '1 = main nick / 0 = secondary nick used in some matches',
   PRIMARY KEY (`SteamID`, `PlayerNick`))
 ENGINE = InnoDB;
 

@@ -33,6 +33,8 @@ for vArgument in sys.argv:
         HLL_DW_GetConfig.runParams["cDebug"]=1
     if vArgument=="check":
         HLL_DW_GetConfig.runParams["cCheck"]=1
+    if vArgument=="skip":
+        HLL_DW_GetConfig.runParams["cSkip"]=1
 
 # Initialize app logging in file CstrLogfilename
 logging.basicConfig(filename=CstrLogfilename, encoding='utf-8', level=logging.ERROR, format='%(asctime)s %(levelname)s %(name)s %(message)s')
@@ -45,6 +47,8 @@ if hlldwconfig==-1:
 #_______________________________________________________________________________________________________
 # LoadMatchesfromCSVBulkFile >>> SECTION - BEGIN
 
+
+if HLL_DW_GetConfig.runParams["cTest"]==1: import tests_DW
 
 # Get matches list to ETL and run ETL processes
 #.....................................................................

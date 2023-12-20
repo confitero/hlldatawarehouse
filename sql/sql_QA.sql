@@ -5,10 +5,13 @@
 
 
 #COMPROBAR QUE TODOS COINCIDEN (sumatorio de kills y death de la partida deben coincidir, salvo caídas de jugadores o cambios de nick entre caídas)
-SET @MatchID=1943;
+USE hlldw;
+SET @MatchID=1;
 SELECT * FROM gamematch WHERE MatchID=@MatchID;
 
-SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),"Error: player count and playerstats distinct steamID not equal","") AS CheckNumPlayers;
+SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),"Error: player count and playerstats distinct steamID not equal","OK") AS CheckNumPlayers;
+SELECT CASE (SELECT COUNT(Distinct SteamID) FROM player) WHEN (SELECT COUNT(DISTINCT SteamID) FROM playerstats) THEN 'OK, playerstats equals player' ELSE 'Error: player count and playerstats distinct steamID not equal' END AS CheckNumPlayers;
+SELECT CASE (SELECT COUNT(*) FROM player) WHEN (SELECT COUNT(*) FROM (SELECT 1 FROM playerstats GROUP BY SteamID) AS a) THEN 'OK, playerstats equals player' ELSE 'Error: player count and playerstats distinct steamID not equal' END AS CheckNumPlayers;
 
 
 #Las siguientes consultas deben devolver todas 0
@@ -74,10 +77,12 @@ WHERE a.MatchID=@MatchID AND (a.Kills<>KillsInKillsByPlayer OR a.Kills<>KillsInd
 
 
 #Jugadores sin SteamID
-SELECT * FROM playerstats a WHERE a.SteamID="0";
+SELECT * FROM playerstats a WHERE a.SteamID='0';
+SELECT * FROM playerstats a WHERE a.SteamID IS NULL;
 
 #Jugadores sin bando que tengan kills o muertes de las que poder sacar el bando
 SELECT * FROM playerstats a WHERE a.kills+a.Deaths>0 AND (a.PlayerSide is null OR a.PlayerSide NOT IN (0,1,2)) AND MatchID=@MatchID;
 
 #Variaciones de nicks de jugadores
 SELECT  distinct a.SteamID,a.Player FROM playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<>b.Player ORDER BY a.SteamID
+SELECT  distinct a.SteamID,a.Player FROM playerstats a, playerstats b WHERE a.SteamID=b.SteamID AND a.Player<b.Player ORDER BY a.SteamID

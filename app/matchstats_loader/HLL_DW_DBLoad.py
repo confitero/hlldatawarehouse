@@ -3,7 +3,32 @@ import json
 import HLL_DW_error
 import datetime
 import HLL_DW_GetConfig
-import db_modules.HLL_db_mariadb as HLLdb
+#import db_modules.HLL_db_mariadb as HLLdb
+import db_modules.HLL_db_mysql as HLLdb
+#import db_modules.HLL_db_postgres as HLLdb
+
+def minValueJSON(jsonValue,maxValue):
+    if (str(jsonValue).lstrip("-").isnumeric()): return min(int(jsonValue),maxValue)
+    else: 
+        raise Exception("In function HLL_DW_DBLoad.minValueJSON(" + str(jsonValue) + ", " + str(maxValue) + ") the first param not valid as number")
+
+def parseJSONDateTime(strDatetime):
+    """Converts string from different datetime formats to datetime object
+
+    Args:
+        strDatetime (String): String datetime to convert to datetime object
+
+    Returns:
+        int: 0 if error; datetime if convert succeeds
+    """
+    
+    for strFormats in ("%Y-%m-%dT%H:%M:%S","%Y-%m-%dT%H:%M:%S.%f"):
+        try:
+            return datetime.datetime.strptime(strDatetime, strFormats)        
+        except:
+            pass
+    return 0
+
 
 def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofromJSON):
     """Insert a new match in database and returns the internal database match ID
@@ -25,14 +50,17 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
 
     # Get database mapID from table map throught matchInfofromJSON["RCONMapName"]
     mapID=0
-    strsql="SELECT mapID from map where MapKey='%s' collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]
+    ###del strsql="SELECT mapID from map where MapKey='%s' collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]    
+    strsql=HLLdb.sqlCollate("SELECT mapID from map where lower(MapKey)=lower(%s)")
+    sqlparams=[matchInfofromJSON["RCONMapName"]]
     try:
-        ret=HLLdb.sqlExecute(dbcursor,strsql)
+        ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         if ret==1:
             mapID=int(dbcursor.fetchone()[0])
         else:
-            strsql="SELECT mapID from map where concat(MapKey,'_RESTART')='%s' collate utf8mb4_unicode_ci" % matchInfofromJSON["RCONMapName"]
-            ret=HLLdb.sqlExecute(dbcursor,strsql)
+            strsql=HLLdb.sqlCollate("SELECT mapID from map where lower(concat(MapKey,'_RESTART'))=lower(%s)")
+            sqlparams=[matchInfofromJSON["RCONMapName"]]
+            ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
             if ret==1:
                 mapID=int(dbcursor.fetchone()[0])
             else:
@@ -42,14 +70,16 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
         return -1
 
     # Check if CMID+RCONMatchID exists in database (table Gamematch) and insert new DW database match if doesn't exist
-    strsql="SELECT 1 from gamematch where CMID=%s AND RCONMatchID=%s" % (matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"])
+    strsql="SELECT 1 from gamematch where CMID=%s AND RCONMatchID=%s"
+    sqlparams=[matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"]]
     try:
-        ret=HLLdb.sqlExecute(dbcursor,strsql)
+        ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         if ret==0:
             #strsql="INSERT INTO gamematch (CMID, RCONMatchID, MatchName, MatchDesc, ClansCoAllies, ClansCoAxis, StartTime, EndTime, DurationSec, RCONMapName, RCONServerNumber, StatsUrl, JSONStatsURL, GameServerName, GameServerIP, GameServerOwner, MapID, ResultAllies, ResultAxis, MatchType, CompetitionID) VALUES \
             #    (%s,%s,'%s','%s','%s','%s','%s','%s',%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%s,%s,%s%s,%s)" \
             #    % (matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"],matchInfofromCSV["MatchName"],matchInfofromCSV["MatchDesc"],matchInfofromCSV["ClansCoAllies"],matchInfofromCSV["ClansCoAxis"],matchInfofromJSON["StartTime"],matchInfofromJSON["EndTime"],matchInfofromJSON["DurationSec"],matchInfofromJSON["RCONMapName"],matchInfofromJSON["RCONServerNumber"],matchInfofromCSV["StatsUrl"],matchStatsInfofromURL["url"],matchInfofromCSV["GameServerName"],matchInfofromCSV["GameServerIP"],matchInfofromCSV["GameServerOwner"],mapID,matchInfofromCSV["MatchType"],matchInfofromCSV["CompetitionID"])
 
+            """
             strsql=f"INSERT INTO gamematch (CMID, RCONMatchID, MatchName, MatchDesc, ClansCoAllies, ClansCoAxis, StartTime, EndTime, DurationSec, RCONMapName, RCONServerNumber, StatsUrl,\
                   JSONStatsURL, GameServerName, GameServerIP, GameServerOwner, MapID, ResultAllies, ResultAxis, MatchType, CompetitionID) VALUES \
                 ({matchInfofromCSV['CMID']},{matchInfofromJSON['RCONMatchID']},'{matchInfofromCSV['MatchName']}',\
@@ -58,13 +88,25 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
                 '{matchInfofromJSON['RCONMapName']}',{matchInfofromJSON['RCONServerNumber']},'{matchInfofromCSV['StatsUrl']}',\
                 '{matchStatsInfofromURL['url']}','{matchInfofromCSV['GameServerName']}','{matchInfofromCSV['GameServerIP']}','{matchInfofromCSV['GameServerOwner']}',\
                 {str(mapID)},{matchInfofromCSV['ResultAllies']},{matchInfofromCSV['ResultAxis']},{matchInfofromCSV['MatchType']},{matchInfofromCSV['CompetitionID']});"
-            
-            if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+            """
+
+            strsql="INSERT INTO gamematch (CMID, RCONMatchID, MatchName, MatchDesc, ClansCoAllies, ClansCoAxis, StartTime, EndTime, DurationSec, RCONMapName, RCONServerNumber, StatsUrl,\
+                  JSONStatsURL, GameServerName, GameServerIP, GameServerOwner, MapID, ResultAllies, ResultAxis, MatchType, CompetitionID) VALUES \
+                  (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+            sqlparams=[matchInfofromCSV['CMID'],matchInfofromJSON['RCONMatchID'],matchInfofromCSV['MatchName'],\
+                matchInfofromCSV['MatchDesc'],matchInfofromCSV['ClansCoAllies'],matchInfofromCSV['ClansCoAxis'],\
+                matchInfofromJSON['StartTime'],matchInfofromJSON['EndTime'],matchInfofromJSON['DurationSec'],\
+                matchInfofromJSON['RCONMapName'],matchInfofromJSON['RCONServerNumber'],matchInfofromCSV['StatsUrl'],\
+                matchStatsInfofromURL['url'],matchInfofromCSV['GameServerName'],matchInfofromCSV['GameServerIP'],matchInfofromCSV['GameServerOwner'],\
+                str(mapID),matchInfofromCSV['ResultAllies'],matchInfofromCSV['ResultAxis'],matchInfofromCSV['MatchType'],matchInfofromCSV['CompetitionID']]
+
+            if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
             #Get the new created match internal database ID
-            strsql="SELECT matchID from gamematch where CMID=%s AND RCONMatchID=%s AND StartTime='%s' AND EndTime='%s'" % (matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"],matchInfofromJSON["StartTime"],matchInfofromJSON["EndTime"])
+            strsql="SELECT matchID from gamematch where CMID=%s AND RCONMatchID=%s AND StartTime=%s AND EndTime=%s"
+            sqlparams=[matchInfofromCSV["CMID"],matchInfofromJSON["RCONMatchID"],matchInfofromJSON["StartTime"],matchInfofromJSON["EndTime"]]
             if HLL_DW_GetConfig.runParams["cTest"]==0:
-                ret=HLLdb.sqlExecute(dbcursor,strsql)
+                ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
                 if ret==1:
                     matchDbID=int(dbcursor.fetchone()[0])
                     return matchDbID
@@ -74,7 +116,10 @@ def sqlInsertMatch(dbcursor,matchInfofromCSV,matchStatsInfofromURL,matchInfofrom
                 return 1
 
         else:
-            raise Exception("Error trying to insert new match into database table gamematch: match exists for CMID=" + str(matchInfofromCSV["CMID"]) + " and RCONMatchID=" + matchInfofromJSON["RCONMatchID"])
+            if HLL_DW_GetConfig.runParams["cSkip"]==0:
+                raise Exception("Error trying to insert new match into database table gamematch: match exists for CMID=" + str(matchInfofromCSV["CMID"]) + " and RCONMatchID=" + matchInfofromJSON["RCONMatchID"])
+            else:
+                return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertMatch 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(matchInfofromJSON) + " ))")
         return -1
@@ -89,9 +134,10 @@ def sqlCheckNotRegisteredWeapons(dbcursor,MatchDbID,matchInfofromCSV,matchStatsI
     Returns:
         int: 0 if no errors; -1 if any error
     """
-    strsql=f"SELECT DISTINCT Weapon collate utf8mb4_unicode_ci FROM weaponkillsbyplayer a WHERE a.matchID={MatchDbID} AND a.weapon NOT IN (SELECT DISTINCT weapon collate utf8mb4_unicode_ci FROM weapon);"
+    strsql="SELECT DISTINCT " + HLLdb.sqlCollate("Weapon") + " FROM weaponkillsbyplayer a WHERE a.matchID=%s AND a.weapon NOT IN (SELECT DISTINCT " + HLLdb.sqlCollate("weapon") + " FROM weapon);"
+    sqlparams=[MatchDbID]
     try:        
-        ret=HLLdb.sqlExecute(dbcursor,strsql)
+        ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         if ret==0:
             return 0
         else:
@@ -117,24 +163,29 @@ def sqlCheckOrInsertPlayer(dbcursor,playerStats):
         int: 0 if exists or inserted new; -1 if error
     """
 
-    strsql="SELECT 1 from Player where DWPlayerID='%s'" % playerStats["DWPlayerID"]
+    strsql="SELECT 1 from player where DWPlayerID=%s"
+    sqlparams=[playerStats["DWPlayerID"]]
     try:        
-        ret=HLLdb.sqlExecute(dbcursor,strsql)
+        ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         if ret==0:
-            strsql="insert into Player (DWPlayerID,SteamID,Rank) values ('%s','%s',%s)" % (playerStats["DWPlayerID"],playerStats["SteamID"],"0")
-            if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+            strsql=f"insert into player (DWPlayerID,SteamID,{HLLdb.sqlQuoteKeyword("Rank")}) values (%s,%s,%s)"
+            sqlparams=[playerStats["DWPlayerID"],playerStats["SteamID"],"0"]
+            if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
-            strsql="insert into PlayerNicks (SteamID,PlayerNick,MainNick) values ('%s','%s',1)" % (playerStats["SteamID"],HLLdb.sqlEscape(playerStats["Player"]))
-            if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+            strsql="insert into playernicks (SteamID,PlayerNick,MainNick) values (%s,%s,%s)"
+            sqlparams=[playerStats["SteamID"],HLLdb.sqlEscape(playerStats["Player"]),"1"]            
+            if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         else:
-            strsql=f"SELECT 1 from PlayerNicks WHERE SteamID='{playerStats['SteamID']}' AND PlayerNick='{HLLdb.sqlEscape(playerStats['Player'])}'"
-            ret=HLLdb.sqlExecute(dbcursor,strsql)
+            strsql="SELECT 1 from playernicks WHERE SteamID=%s AND PlayerNick=%s"
+            sqlparams=[playerStats['SteamID'],HLLdb.sqlEscape(playerStats['Player'])]
+            ret=HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
             if ret==0:
-                strsql="insert into PlayerNicks (SteamID,PlayerNick,MainNick) values ('%s','%s',0)" % (playerStats["SteamID"],HLLdb.sqlEscape(playerStats["Player"]))
-                if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+                strsql="insert into playernicks (SteamID,PlayerNick,MainNick) values (%s,%s,%s)"
+                sqlparams=[playerStats["SteamID"],HLLdb.sqlEscape(playerStats["Player"]),"0"]
+                if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
-        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertPlayer 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(playerStats) + " ))")
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckOrInsertPlayer 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(playerStats) + " ))")
         return -1
 
 def sqlFillPlayerClanAndTAG (dbcursor,MatchDbID):
@@ -147,9 +198,10 @@ def sqlFillPlayerClanAndTAG (dbcursor,MatchDbID):
     Returns:
         int: 0 if no errors; -1 if any error
     """
-    strsql=f"UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where locate(y.clantag,x.Player)>0 AND x.MatchID={MatchDbID};"
+    strsql="UPDATE playerstats x, clantag y SET x.PlayerClanTag=y.ClanTag,x.PlayerClanID=y.ClanID where " + HLLdb.sqllocateSubStr("y.clantag","x.Player") + " AND x.MatchID=%s;"
+    sqlparams=[MatchDbID]
     try:
-        HLLdb.sqlExecute(dbcursor,strsql)
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillPlayerClanAndTAG 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
@@ -168,23 +220,29 @@ def sqlFillPlayerMatchSide (dbcursor,MatchDbID):
     """
     
     try:        
-        strsql=f"UPDATE playerstats a, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID={MatchDbID} AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
-        HLLdb.sqlExecute(dbcursor,strsql)
+        sqlparams=[MatchDbID]
 
-        # strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.Kills=0 AND a.Deaths>0 AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0;"
-        # HLLdb.sqlExecute(dbcursor,strsql)
+        ##del MYSQL strsql="UPDATE playerstats a, weaponkillsbyplayer c, weapon d SET a.PlayerSide=d.Side WHERE a.MatchID=%s AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
+        ##del POSTGRES strsql="UPDATE playerstats a SET PlayerSide=d.Side from weaponkillsbyplayer c, weapon d WHERE a.MatchID=%s AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
 
-        strsql=f"UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID={MatchDbID} AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.deaths) FROM weapondeathsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
-        HLLdb.sqlExecute(dbcursor,strsql)
+        strsql=HLLdb.sqlUpdate("playerstats a","weaponkillsbyplayer c, weapon d","a.PlayerSide=d.Side","a.MatchID=%s AND a.MatchID=c.MatchID AND a.Player=c.Player AND c.Weapon=d.Weapon AND d.side<>0 and c.Kills=(SELECT max(x.Kills) FROM weaponkillsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);")
+        
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
-        strsql=f"UPDATE playerstats a, deathsbyplayer c, playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2) WHERE a.Deaths>0 AND a.PlayerSide is null AND a.MatchID={MatchDbID} AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 AND d.PlayerSide is not NULL and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);"
-        HLLdb.sqlExecute(dbcursor,strsql)
+        ##del strsql="UPDATE playerstats a, weapondeathsbyplayer b, weapon c SET a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end WHERE a.MatchID=%s AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.deaths) FROM weapondeathsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);"
+        strsql=HLLdb.sqlUpdate("playerstats a","weapondeathsbyplayer b, weapon c","a.PlayerSide = CASE when c.side=1 then 2 when c.side=2 then 1 else 0 end","WHERE a.MatchID=%s AND a.PlayerSide IS NULL AND a.MatchID=b.MatchID AND a.Player=b.Player AND b.Weapon=c.Weapon AND c.side<>0 and b.Deaths=(SELECT max(x.deaths) FROM weapondeathsbyplayer x, weapon y WHERE a.Player=x.Player AND a.MatchID=x.MatchID AND x.Weapon=y.Weapon AND y.Side<>0);")
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
+
+        #del strsql="UPDATE playerstats a, deathsbyplayer c, playerstats d SET a.PlayerSide=1+(d.PlayerSide MOD 2) WHERE a.Deaths>0 AND a.PlayerSide is null AND a.MatchID=%s AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 AND d.PlayerSide is not NULL and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);"
+        strsql=HLLdb.sqlUpdate("playerstats a","deathsbyplayer c, playerstats d","a.PlayerSide=1+(d.PlayerSide MOD 2)","a.Deaths>0 AND a.PlayerSide is null AND a.MatchID=%s AND a.MatchID=c.MatchID AND a.Player=c.Victim AND a.MatchID=d.MatchID AND c.Killer=d.Player AND d.PlayerSide<>0 AND d.PlayerSide is not NULL and c.Deaths=(SELECT max(c.Deaths) FROM deathsbyplayer x, PlayerStats y WHERE a.Player=x.Victim AND a.MatchID=x.MatchID AND x.MatchID=y.MatchID AND x.Killer=y.Player AND y.PlayerSide<>0);")
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillPlayerMatchSide 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
         return -1
 
+##del this function, deprecated
 def sqlFillMatchRolesAux (MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole):
     """Aux function to form SQL string to insert match squad roles to every player
 
@@ -219,48 +277,59 @@ def sqlFillMatchRoles (dbcursor,MatchDbID):
     """
     
     try:
+        strsql="INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) \
+            SELECT 1,a.Player,a.SteamID,%s,%s,%s,a.PlayerSide FROM playerstats a, weaponkillsbyplayer b, weapon c \
+            WHERE a.MatchID=%s AND a.player=b.player AND b.MatchID=%s AND b.Weapon=c.Weapon AND c.category1=%s \
+            GROUP BY a.Player,a.SteamID,%s,%s,%s,a.PlayerSide HAVING ((SUM(b.Kills)/sum(a.Kills))>=%s);"
+        
         #Fill Commanders role (players with at least 1 kill made by commander category weapon)
         weaponthreshold="0"
         squadRole="Commander"
         weaponCategory1="Commander"
         playerRole="Commander"
-        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
-        HLLdb.sqlExecute(dbcursor,strsql)
+        ##del strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        sqlparams=[squadRole,playerRole,weaponCategory1,MatchDbID,MatchDbID,weaponCategory1,squadRole,playerRole,weaponCategory1,weaponthreshold]
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
         #Fill Armored role (players with at least 20% of theirs kills are made by tank weapons)
         weaponthreshold="0.20"
         squadRole="Armored"
         weaponCategory1="Tank"
         playerRole="Tank-crew"
-        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
-        HLLdb.sqlExecute(dbcursor,strsql)
+        #strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        sqlparams=[squadRole,playerRole,weaponCategory1,MatchDbID,MatchDbID,weaponCategory1,squadRole,playerRole,weaponCategory1,weaponthreshold]
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
         #Fill Artillery role (players with at least 30% of theirs kills are made by artillery weapons)
         weaponthreshold="0.30"
         squadRole="Artillery"
         weaponCategory1="Artillery"
         playerRole="Artilleryman"
-        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
-        HLLdb.sqlExecute(dbcursor,strsql)
+        #strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        sqlparams=[squadRole,playerRole,weaponCategory1,MatchDbID,MatchDbID,weaponCategory1,squadRole,playerRole,weaponCategory1,weaponthreshold]
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
         #Fill Sniper role (players with at least 50% of theirs kills are made by sniper weapons)
         weaponthreshold="0.50"
         squadRole="Recon"
         weaponCategory1="Recon"
         playerRole="Sniper"
-        strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
-        HLLdb.sqlExecute(dbcursor,strsql)
+        #strsql=sqlFillMatchRolesAux(MatchDbID,squadRole,weaponCategory1,weaponthreshold,playerRole)
+        sqlparams=[squadRole,playerRole,weaponCategory1,MatchDbID,MatchDbID,weaponCategory1,squadRole,playerRole,weaponCategory1,weaponthreshold]
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
         #Set squad type as Infantry to rest of players in that match
-        strsql=f"INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) \
-            SELECT DISTINCT {MatchDbID},a.player,a.SteamID,'Infantry','Infantry','Infantry',a.PlayerSide FROM playerstats a \
-            WHERE a.MatchID={MatchDbID} AND a.Player not IN (SELECT DISTINCT x.Player FROM matchsquads x WHERE x.MatchID={MatchDbID})"
-        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+        strsql="INSERT INTO matchsquads (MatchID, Player, SteamID, SquadRole, PlayerRole, SquadName, Side) \
+            SELECT DISTINCT %s,a.player,a.SteamID,'Infantry','Infantry','Infantry',a.PlayerSide FROM playerstats a \
+            WHERE a.MatchID=%s AND a.Player not IN (SELECT DISTINCT x.Player FROM matchsquads x WHERE x.MatchID=%s)"
+        sqlparams=[MatchDbID,MatchDbID,MatchDbID]
+        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
 
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlFillMatchRoles 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for internal database match " + str(MatchDbID))
         return -1
+
 
 def sqlInsertPlayerStats(dbcursor,playerStats):
     """Insert player match stats into database
@@ -273,7 +342,7 @@ def sqlInsertPlayerStats(dbcursor,playerStats):
         int: 0 if playerstats inserted; -1 if error
     """
 
-    strsql="INSERT INTO PlayerStats (CMID,MatchID,Player,\
+    strsql="INSERT INTO playerstats (CMID,MatchID,Player,\
         DWPlayerID,RCONPlayerID,SteamID,\
         Kills,Deaths,TKs,\
         KD,MaxKillStreak,KillsMin,DeathsMin,\
@@ -281,41 +350,41 @@ def sqlInsertPlayerStats(dbcursor,playerStats):
         LongestLifeSec,ShortestLifeSec,MatchActiveTimeSec,\
         Nemesis,Victims,KillsByWeapons,DeathsByWeapons,\
         CombatPoints,OffensePoints,DefensePoints,SupportPoints)\
-        VALUES (%s,%s,'%s',\
-            '%s',%s,'%s',\
+        VALUES (%s,%s,%s,\
+            %s,%s,%s,\
             %s,%s,%s,\
             %s,%s,%s,%s,\
             %s,%s,%s,%s,\
             %s,%s,%s,\
-            '%s','%s','%s','%s',\
+            %s,%s,%s,%s,\
             %s,%s,%s,%s)"
     strNemesis=HLLdb.sqlEscape(json.dumps(playerStats["Nemesis"]))
     strVictims=HLLdb.sqlEscape(json.dumps(playerStats["Victims"]))
     strKillsByWeapons=HLLdb.sqlEscape(json.dumps(playerStats["KillsByWeapons"]))
     strDeathsByWeapons=HLLdb.sqlEscape(json.dumps(playerStats["DeathsByWeapons"]))
 
-    aSQLValues=(playerStats["CMID"],playerStats["MatchID"],HLLdb.sqlEscape(playerStats["Player"]),\
+    sqlparams=[playerStats["CMID"],playerStats["MatchID"],HLLdb.sqlEscape(playerStats["Player"]),\
         playerStats["DWPlayerID"],playerStats["RCONPlayerID"],playerStats["SteamID"],\
         playerStats["Kills"],playerStats["Deaths"],playerStats["TKs"],\
         playerStats["KD"],playerStats["MaxKillStreak"],playerStats["KillsMin"],playerStats["DeathsMin"],\
         playerStats["MaxDeathStreak"],playerStats["MaxTKStreak"],playerStats["DeathByTK"],playerStats["DeathByTKStreak"],\
         playerStats["LongestLifeSec"],playerStats["ShortestLifeSec"],playerStats["MatchActiveTimeSec"],\
         strNemesis,strVictims,strKillsByWeapons,strDeathsByWeapons,\
-        playerStats["CombatPoints"],playerStats["OffensePoints"],playerStats["DefensePoints"],playerStats["SupportPoints"])
-    strsql=strsql % aSQLValues
+        playerStats["CombatPoints"],playerStats["OffensePoints"],playerStats["DefensePoints"],playerStats["SupportPoints"]]
+    
     try:        
-        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
-        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertPlayerStats 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(playerStats) + " ))")
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertPlayerStats 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) " + str(sqlparams) + " for array (( " + str(playerStats) + " ))")
         return -1
 
 def sqlInsertNemesisList(dbcursor,nemesisList):
 
-    strsql="INSERT INTO deathsbyplayer (MatchID,Victim,Killer,Deaths) VALUES (%s,'%s','%s',%s)"
-    strsql=strsql % (nemesisList["MatchID"],HLLdb.sqlEscape(nemesisList["Victim"]),HLLdb.sqlEscape(nemesisList["Killer"]),nemesisList["Deaths"])
+    strsql="INSERT INTO deathsbyplayer (MatchID,Victim,Killer,Deaths) VALUES (%s,%s,%s,%s)"
+    sqlparams=[nemesisList["MatchID"],HLLdb.sqlEscape(nemesisList["Victim"]),HLLdb.sqlEscape(nemesisList["Killer"]),nemesisList["Deaths"]]
     try:
-        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertNemesisList 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(nemesisList))
@@ -323,10 +392,10 @@ def sqlInsertNemesisList(dbcursor,nemesisList):
 
 def sqlInsertVictimList(dbcursor,victimList):
 
-    strsql="INSERT INTO killsbyplayer (MatchID,Killer,Victim,Kills) VALUES (%s,'%s','%s',%s)"
-    strsql=strsql % (victimList["MatchID"],HLLdb.sqlEscape(victimList["Killer"]),HLLdb.sqlEscape(victimList["Victim"]),victimList["Kills"])
+    strsql="INSERT INTO killsbyplayer (MatchID,Killer,Victim,Kills) VALUES (%s,%s,%s,%s)"
+    sqlparams=[victimList["MatchID"],HLLdb.sqlEscape(victimList["Killer"]),HLLdb.sqlEscape(victimList["Victim"]),victimList["Kills"]]
     try:
-        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertVictimList 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(victimList))
@@ -334,10 +403,10 @@ def sqlInsertVictimList(dbcursor,victimList):
 
 def sqlInsertWeaponKillsList(dbcursor,weaponList):
 
-    strsql="INSERT INTO weaponkillsbyplayer (MatchID,Player,Weapon,Kills) VALUES (%s,'%s','%s',%s)"
-    strsql=strsql % (weaponList["MatchID"],HLLdb.sqlEscape(weaponList["Player"]),HLLdb.sqlEscape(weaponList["Weapon"]),weaponList["Kills"])
+    strsql="INSERT INTO weaponkillsbyplayer (MatchID,Player,Weapon,Kills) VALUES (%s,%s,%s,%s)"
+    sqlparams=[weaponList["MatchID"],HLLdb.sqlEscape(weaponList["Player"]),HLLdb.sqlEscape(weaponList["Weapon"]),weaponList["Kills"]]
     try:
-        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertWeaponKillsList 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(weaponList) + " ))")
@@ -345,10 +414,10 @@ def sqlInsertWeaponKillsList(dbcursor,weaponList):
 
 def sqlInsertWeaponDeathsList(dbcursor,weaponList):
 
-    strsql="INSERT INTO weapondeathsbyplayer (MatchID,Player,Weapon,Deaths) VALUES (%s,'%s','%s',%s)"
-    strsql=strsql % (weaponList["MatchID"],HLLdb.sqlEscape(weaponList["Player"]),HLLdb.sqlEscape(weaponList["Weapon"]),weaponList["Deaths"])
+    strsql="INSERT INTO weapondeathsbyplayer (MatchID,Player,Weapon,Deaths) VALUES (%s,%s,%s,%s)"
+    sqlparams=[weaponList["MatchID"],HLLdb.sqlEscape(weaponList["Player"]),HLLdb.sqlEscape(weaponList["Weapon"]),weaponList["Deaths"]]
     try:
-        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql)
+        if HLL_DW_GetConfig.runParams["cTest"]==0: HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         return 0
     except Exception as ex:
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlInsertWeaponDeathsList 1",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " )) for array (( " + str(weaponList) + " ))")
@@ -356,7 +425,7 @@ def sqlInsertWeaponDeathsList(dbcursor,weaponList):
 
 def sqlPreCheckNumPlayers(dbcursor):
 
-    strsql="SELECT if((SELECT COUNT(Distinct SteamID) FROM player)<>(SELECT COUNT(DISTINCT SteamID) FROM playerstats),1,0) AS CheckNumPlayers;"
+    strsql=HLLdb.sqlPreCheckNumPlayers()
     try:
         HLLdb.sqlExecute(dbcursor,strsql)
         if dbcursor.fetchone()[0]==1:
@@ -368,9 +437,10 @@ def sqlPreCheckNumPlayers(dbcursor):
 
 def sqlCheckMatchNumPlayers(dbcursor,MatchDbID):
 
-    strsql=f"SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID={MatchDbID} AND NOT EXISTS (SELECT 1 FROM player WHERE player.SteamID=playerstats.SteamID);"
+    strsql="SELECT COUNT(*) AS NumPlayers FROM playerstats WHERE MatchID=%s AND NOT EXISTS (SELECT 1 FROM player WHERE player.SteamID=playerstats.SteamID);"
+    sqlparams=[MatchDbID]
     try:
-        if HLLdb.sqlExecute(dbcursor,strsql):
+        if HLLdb.sqlExecute(dbcursor,strsql,sqlparams):
             NumPlayers=dbcursor.fetchone()[0]
             if NumPlayers>=1:
                 HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 1","","","Warning: not all match players exists in table player for matchID = " + str(MatchDbID))
@@ -379,10 +449,10 @@ def sqlCheckMatchNumPlayers(dbcursor,MatchDbID):
         HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckMatchNumPlayers 2",str(ex.args),str(type(ex)),"Error in SQL sentence >> (( " + strsql + " ))")
         return -1
 
-def sqlCheckConsistency(strsql,dbcursor,strerror):
+def sqlCheckConsistency(strsql,dbcursor,sqlparams,strerror):
 
     try:
-        HLLdb.sqlExecute(dbcursor,strsql)
+        HLLdb.sqlExecute(dbcursor,strsql,sqlparams)
         if dbcursor.fetchone()[0]>0:
             HLL_DW_error.log_error("HLL_DW_DBLoad.py sqlCheckConsistency 1","","",strerror)
             return -1
@@ -394,48 +464,50 @@ def sqlCheckConsistency(strsql,dbcursor,strerror):
 
 def sqlCheckKillsAndDeathsSumConsistency(dbcursor,MatchDbID):
 
-    strsql=f"SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID={MatchDbID})<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
-    sqlCheckConsistency(strsql,dbcursor,"Warning1: checking sum kills in killsbyplayer-deathsbyplayer for match = " + str(MatchDbID))
+    sqlparams=[MatchDbID]
+
+    strsql="SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=%s)<>(SELECT SUM(deaths) FROM deathsbyplayer WHERE MatchID=%s),1,0) AS DiffKill_Deaths;"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning1: checking sum kills in killsbyplayer-deathsbyplayer for match = " + str(MatchDbID))
     
-    strsql=f"SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID={MatchDbID})<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Kills;"
-    sqlCheckConsistency(strsql,dbcursor,"Warning2: checking sum kills in killsbyplayer-weaponkillsbyplayer for match = " + str(MatchDbID))
+    strsql="SELECT if((SELECT SUM(Kills) FROM killsbyplayer WHERE MatchID=%s)<>(SELECT SUM(kills) FROM weaponkillsbyplayer WHERE MatchID=%s),1,0) AS DiffKill_Kills;"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning2: checking sum kills in killsbyplayer-weaponkillsbyplayer for match = " + str(MatchDbID))
 
-    strsql=f"SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID={MatchDbID})<>(SELECT SUM(kills) FROM killsbyplayer WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
-    sqlCheckConsistency(strsql,dbcursor,"Warning3: checking sum kills in playerstats-killsbyplayer for match = " + str(MatchDbID))
+    strsql="SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID=%s)<>(SELECT SUM(kills) FROM killsbyplayer WHERE MatchID=%s),1,0) AS DiffKill_Deaths;"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning3: checking sum kills in playerstats-killsbyplayer for match = " + str(MatchDbID))
 
-    strsql=f"SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID={MatchDbID})<>(SELECT SUM(deaths) FROM playerstats WHERE MatchID={MatchDbID}),1,0) AS DiffKill_Deaths;"
-    sqlCheckConsistency(strsql,dbcursor,"Warning4: checking sum kills in playerstats matches sum deaths in playerstats for match = " + str(MatchDbID))
+    strsql="SELECT if((SELECT SUM(Kills) FROM playerstats WHERE MatchID=%s)<>(SELECT SUM(deaths) FROM playerstats WHERE MatchID=%s),1,0) AS DiffKill_Deaths;"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning4: checking sum kills in playerstats matches sum deaths in playerstats for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID={MatchDbID} AND killer NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning5: checking consistency players (killers) in killsbyplayer-playerstats for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=%s AND killer NOT IN (SELECT player FROM playerstats WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning5: checking consistency players (killers) in killsbyplayer-playerstats for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID={MatchDbID} AND victim NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning6: checking consistency players (victims) in killsbyplayer-playerstats for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM killsbyplayer WHERE matchID=%s AND victim NOT IN (SELECT player FROM playerstats WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning6: checking consistency players (victims) in killsbyplayer-playerstats for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID={MatchDbID} AND victim NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning7: checking consistency victim players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID=%s AND victim NOT IN (SELECT player FROM playerstats WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning7: checking consistency victim players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID={MatchDbID} AND killer NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning8: checking consistency killer players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM deathsbyplayer WHERE matchID=%s AND killer NOT IN (SELECT player FROM playerstats WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning8: checking consistency killer players in deathsbyplayer-playerstats for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weaponkillsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning9: checking consistency players in weaponkillsbyplayer-playerstats for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM weaponkillsbyplayer WHERE matchID=%s AND player NOT IN (SELECT player FROM playerstats WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning9: checking consistency players in weaponkillsbyplayer-playerstats for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM killsbyplayer WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning10: checking consistency players in playerstats-killsbyplayer for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=%s AND kills>0 AND player NOT IN (SELECT player FROM killsbyplayer WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning10: checking consistency players in playerstats-killsbyplayer for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND Deaths>0 AND player NOT IN (SELECT player FROM deathsbyplayer WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning11: checking consistency players in playerstats-deathsbyplayer for match = " + str(MatchDbID))
+    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=%s AND Deaths>0 AND player NOT IN (SELECT player FROM deathsbyplayer WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning11: checking consistency players in playerstats-deathsbyplayer for match = " + str(MatchDbID))
 
-    strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID={MatchDbID} AND kills>0 AND player NOT IN (SELECT player FROM weaponkillsbyplayer WHERE matchID={MatchDbID});"
-    sqlCheckConsistency(strsql,dbcursor,"Warning12: checking consistency players in playerstats-weaponkillsbyplayer for match = " + str(MatchDbID))
+    strsql="SELECT COUNT(*) AS HitsNotRegistered FROM playerstats WHERE matchID=%s AND kills>0 AND player NOT IN (SELECT player FROM weaponkillsbyplayer WHERE matchID=%s);"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning12: checking consistency players in playerstats-weaponkillsbyplayer for match = " + str(MatchDbID))
 
-    strsql=f"SELECT count(*) FROM playerstats WHERE SteamID='0' AND matchID={MatchDbID};"
-    sqlCheckConsistency(strsql,dbcursor,"Warning13: checking playerstat, found players with steamID=0 for match = " + str(MatchDbID))
+    strsql="SELECT count(*) FROM playerstats WHERE SteamID='0' AND matchID=%s;"
+    sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning13: checking playerstat, found players with steamID=0 for match = " + str(MatchDbID))
 
     # Disabled to avoid Warning:s when loading old matches that don't have JSON weapondeathsbyplayer field
     #strsql=f"SELECT COUNT(*) AS HitsNotRegistered FROM weapondeathsbyplayer WHERE matchID={MatchDbID} AND player NOT IN (SELECT player FROM playerstats WHERE matchID={MatchDbID});"
-    #sqlCheckConsistency(strsql,dbcursor,"Warning14: checking consistency players in weapondeathsbyplayer-playerstats for match = " + str(MatchDbID))
+    #sqlCheckConsistency(strsql,dbcursor,sqlparams,"Warning14: checking consistency players in weapondeathsbyplayer-playerstats for match = " + str(MatchDbID))
 
 
 def dbLoadNemesisList (MatchDbID,player,jsonNemesisList,dbcursor):
@@ -546,24 +618,24 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
             # Set the two DWPlayerID and SteamID as equal values to preserve DWPlayerID from future database bulk updates to set known later on valid Steam IDs
 
             playerStats["Player"]=str(jsonPlayerStats["player"])
-            playerStats["Kills"]=str(jsonPlayerStats["kills"])
-            playerStats["Deaths"]=str(jsonPlayerStats["deaths"])
+            playerStats["Kills"]=str(minValueJSON(jsonPlayerStats["kills"],HLLdb.sqlMaxSmallInt()))
+            playerStats["Deaths"]=str(minValueJSON(jsonPlayerStats["deaths"],HLLdb.sqlMaxSmallInt()))
             try:
-                playerStats["TKs"]=str(jsonPlayerStats["teamkills"])
+                playerStats["TKs"]=str(minValueJSON(jsonPlayerStats["teamkills"],HLLdb.sqlMaxSmallInt()))
             except:
                 playerStats["TKs"]="0"
             playerStats["KD"]=str(jsonPlayerStats["kill_death_ratio"])
-            playerStats["MaxKillStreak"]=str(jsonPlayerStats["kills_streak"])
+            playerStats["MaxKillStreak"]=str(minValueJSON(jsonPlayerStats["kills_streak"],HLLdb.sqlMaxSmallInt()))
             playerStats["KillsMin"]=str(jsonPlayerStats["kills_per_minute"])
             playerStats["DeathsMin"]=str(jsonPlayerStats["deaths_per_minute"])
-            playerStats["MaxDeathStreak"]=str(jsonPlayerStats["deaths_without_kill_streak"])
-            playerStats["MaxTKStreak"]=str(jsonPlayerStats["teamkills_streak"])
-            playerStats["DeathByTK"]=str(jsonPlayerStats["deaths_by_tk"])
-            playerStats["DeathByTKStreak"]=str(jsonPlayerStats["deaths_by_tk_streak"])
-            playerStats["LongestLifeSec"]=str(jsonPlayerStats["longest_life_secs"])
-            playerStats["ShortestLifeSec"]=str(jsonPlayerStats["shortest_life_secs"])
+            playerStats["MaxDeathStreak"]=str(minValueJSON(jsonPlayerStats["deaths_without_kill_streak"],HLLdb.sqlMaxSmallInt()))
+            playerStats["MaxTKStreak"]=str(minValueJSON(jsonPlayerStats["teamkills_streak"],HLLdb.sqlMaxSmallInt()))
+            playerStats["DeathByTK"]=str(minValueJSON(jsonPlayerStats["deaths_by_tk"],HLLdb.sqlMaxSmallInt()))
+            playerStats["DeathByTKStreak"]=str(minValueJSON(jsonPlayerStats["deaths_by_tk_streak"],HLLdb.sqlMaxSmallInt()))
+            playerStats["LongestLifeSec"]=str(minValueJSON(jsonPlayerStats["longest_life_secs"],HLLdb.sqlMaxSmallInt()))
+            playerStats["ShortestLifeSec"]=str(minValueJSON(jsonPlayerStats["shortest_life_secs"],HLLdb.sqlMaxSmallInt()))
             try:
-                playerStats["MatchActiveTimeSec"]=str(jsonPlayerStats["time_seconds"])
+                playerStats["MatchActiveTimeSec"]=str(minValueJSON(jsonPlayerStats["time_seconds"],HLLdb.sqlMaxInt()))
             except:
                 playerStats["MatchActiveTimeSec"]="0"
             playerStats["Nemesis"]=jsonPlayerStats["death_by"]
@@ -577,10 +649,10 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
             
             try:
                 # Try to get new fields from new RCON app version or set to 0 if invoquing RCON app version is old
-                playerStats["CombatPoints"]=str(int(jsonPlayerStats["combat"] or 0))
-                playerStats["OffensePoints"]=str(int(jsonPlayerStats["offense"] or 0))
-                playerStats["DefensePoints"]=str(int(jsonPlayerStats["defense"] or 0))
-                playerStats["SupportPoints"]=str(int(jsonPlayerStats["support"] or 0))          
+                playerStats["CombatPoints"]=str(minValueJSON(int(jsonPlayerStats["combat"] or 0),HLLdb.sqlMaxSmallInt()))
+                playerStats["OffensePoints"]=str(minValueJSON(int(jsonPlayerStats["offense"] or 0),HLLdb.sqlMaxSmallInt()))
+                playerStats["DefensePoints"]=str(minValueJSON(int(jsonPlayerStats["defense"] or 0),HLLdb.sqlMaxSmallInt()))
+                playerStats["SupportPoints"]=str(minValueJSON(int(jsonPlayerStats["support"] or 0),HLLdb.sqlMaxSmallInt()))
             except:
                 playerStats["CombatPoints"]="0"
                 playerStats["OffensePoints"]="0"
@@ -596,7 +668,7 @@ def dbLoadPlayerStats (matchInfofromCSV,MatchDbID,strMatchJSON,dbcursor):
                 dbLoadWeaponDeathsList (MatchDbID,playerStats["Player"],playerStats["DeathsByWeapons"],dbcursor)
         return iOK
     except Exception as ex:
-        HLL_DW_error.log_error("HLL_DW_DBLoad.py loadPlayerStats 1",str(ex.args),str(type(ex)),"Error extracting PlayerStats JSON Match ID = " + str(MatchDbID) + " >> Player Stats >> ( " + strjsonStats + " )")
+        HLL_DW_error.log_error("HLL_DW_DBLoad.py loadPlayerStats 1",str(ex.args),str(type(ex)),"Error extracting PlayerStats JSON RCONMatchID = " + str(matchInfofromCSV["StatsUrl"]) + " >> Player Stats >> ( " + strjsonStats + " )")
         return iOK-1
 
 def dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,dbcursor):
@@ -630,12 +702,10 @@ def dbInsertNewMatchRecord(matchInfofromCSV,matchStatsInfofromURL,strMatchJSON,d
             matchInfofromJSON["RCONServerNumber"]=str(jsonMatchInfo["server_number"])
             matchInfofromJSON["RCONMapName"]=str(jsonMatchInfo["map_name"])
 
+            endTime=parseJSONDateTime(matchInfofromJSON["EndTime"])
+            startTime=parseJSONDateTime(matchInfofromJSON["StartTime"])
             try:
-                matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S")).seconds
-            except:
-                pass
-            try:
-                matchInfofromJSON["DurationSec"]=(datetime.datetime.strptime(matchInfofromJSON["EndTime"],"%Y-%m-%dT%H:%M:%S.%f")-datetime.datetime.strptime(matchInfofromJSON["StartTime"],"%Y-%m-%dT%H:%M:%S.%f")).seconds
+                matchInfofromJSON["DurationSec"]=(endTime-startTime).seconds
             except Exception as ex:
                 HLL_DW_error.log_error("HLL_DW_DBLoad.py dbInsertNewMatchRecord 1",str(ex.args),str(type(ex)),"Error in JSON StartTime/EndTime format for match stats content " + str(strMatchJSON[0:2048]))
                 return iOK-1
@@ -666,7 +736,7 @@ def dwDbOpenDB (hlldwconfig):
     """
 
     try:
-        dbConn=HLLdb.sqlConnect(hlldwconfig["dbserver"],hlldwconfig["dbuser"],hlldwconfig["dbpass"],hlldwconfig["dbname"],hlldwconfig["dbcharset"],hlldwconfig["dbcollation"])
+        dbConn=HLLdb.sqlConnect(hlldwconfig["dbserver"],hlldwconfig["dbuser"],hlldwconfig["dbpass"],hlldwconfig["dbname"],hlldwconfig["dbcharset"],hlldwconfig["dbcollation"],hlldwconfig["dbport"])
         dbcursor=HLLdb.sqlOpenCursor(dbConn)
 
         return dbConn,dbcursor,0

@@ -8,7 +8,7 @@
 
 # Entry format for server matches MULTIPLE load:
 # Info: matchID (RCON map_id) is unique to all the same servers managed by one rcon and all RCON matches stats can be downloaded from any RCON server port
-# R|||CMID|||StatServerUrl|||MatchNamePrefix|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID|||MatchIDList(comma separated)
+# M|||CMID|||StatServerUrl|||MatchNamePrefix|||GameServerName|||GameServerIP|||GameServerOnwer|||MatchType|||CompetitionID|||MatchIDList(comma separated)
 
 
 #1ª partida torneo Campaña otoño 2023 ##S|||1|||https://server.comunidadhll.es:5443/#/gamescoreboard/1526453|||CHHLL-campain-e1a-1526453|||Torneo Guerra de la Comunidad HHLL partida 1 Ed1-2023 RCON map_id 1526453|||NA Clanes|||NA Clanes|||Comunidad Hispana HLL Server 3||||||Comunidad Hispana HLL|||5|||0|||1|||8
@@ -50,6 +50,15 @@
 
 #Mes de enero-marzo 2022 de la Comunidad
 #R|||1|||https://server.comunidadhll.es|||1503457|||1506607|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
-M|||1|||https://server.comunidadhll.es|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0|||1504072,1504215,1504301,1504313,1504418,1504464,1504619,1505018,1505094,1506361
 
+#Mes de abril-agosto 2022 de la Comunidad
+#R|||1|||https://server.comunidadhll.es|||1506608|||1511414|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1506608|||1511414|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+#R|||1|||https://server.comunidadhll.es|||1511392|||1511392|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
 
+#Mes de septiembre-diciembre 2022 de la Comunidad
+#R|||1|||https://server.comunidadhll.es|||1511415|||1515442|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+
+#Mes de diciembre 2023 de la Comunidad (PARCIAL)
+#R|||1|||https://server.comunidadhll.es|||1527888|||1527888|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
+R|||1|||https://server.comunidadhll.es|||1527889|||1528218|||CH-HLL-Casual|||Comunidad Hispana HLL Servers||||||Comunidad Hispana HLL|||0|||0
